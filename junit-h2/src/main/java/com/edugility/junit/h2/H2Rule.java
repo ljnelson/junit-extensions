@@ -25,7 +25,7 @@
  * The original copy of this license is available at
  * http://www.opensource.org/license/mit-license.html.
  */
-package com.edugility.h2.junit;
+package com.edugility.junit.h2;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
