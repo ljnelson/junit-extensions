@@ -27,28 +27,16 @@
  */
 package com.edugility.junit.h2;
 
-import java.lang.reflect.Proxy;
+import java.util.EventListener;
 
-import java.sql.Connection;
+public interface H2Listener extends EventListener {
 
-import org.junit.Rule;
-import org.junit.Test;
+  public void instanceCreated(final H2Event event);
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+  public void instanceInitialized(final H2Event event);
 
-public class TestCaseH2Rule {
+  public void instanceReset(final H2Event event);
 
-  @Rule
-  public final AbstractH2Rule rule = new DriverManagerH2Rule("test", "test", "sa", "", true);
-
-  @Test
-  public void testConnectionIsProxyAndUnclosable() throws Exception {
-    final Connection connection = this.rule.getConnection();
-    assertNotNull(connection);
-    assertTrue(Proxy.isProxyClass(connection.getClass()));
-    connection.close();
-    assertTrue(!connection.isClosed());
-  }
+  public void instanceShutdown(final H2Event event);
 
 }

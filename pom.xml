@@ -85,6 +85,7 @@
   </dependencyManagement>
 
   <modules>
+    <module>junit-db</module>
     <module>junit-h2</module>
   </modules>
 

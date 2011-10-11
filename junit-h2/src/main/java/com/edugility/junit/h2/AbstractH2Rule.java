@@ -36,6 +36,8 @@ import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+import com.edugility.junit.db.AbstractDBRule;
+
 import org.junit.rules.TestRule;
 
 import org.junit.runner.Description;
@@ -45,7 +47,7 @@ import org.junit.runners.model.Statement;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class H2Rule implements TestRule {
+public abstract class AbstractH2Rule extends AbstractDBRule {
 
   private final boolean initialShutdownValue;
 
@@ -55,46 +57,37 @@ public class H2Rule implements TestRule {
 
   private transient Connection connection;
 
-  public H2Rule() {
-    this(true);
-  }
-
-  public H2Rule(final boolean shutdown) {
-    super();
+  protected AbstractH2Rule(final String catalog, final String schema, final String username, final String password, final boolean shutdown) {
+    super(catalog, schema, username, password);
     this.setShutdown(shutdown);
     this.initialShutdownValue = this.getShutdown();
   }
 
   @Override
-  public Statement apply(final Statement base, final Description description) {
+  public void create() throws Exception {
+    super.create();
     this.setShutdown(this.initialShutdownValue);
-    Statement returnValue = base;
-    if (base != null) {
-      final Statement newStatement = new Statement() {
-          @Override
-          public final void evaluate() throws Throwable {
-            if (connectionProxy == null || connectionProxy.isClosed()) {
-              createConnectionProxy();
-            }
-            validateConnectionProxy();
-            init();
-            try {
-              base.evaluate();
-            } finally {
-              try {
-                cleanup();
-                if (getShutdown()) {
-                  shutdown();
-                }
-              } finally {
-                closeConnection();
-              }
-            }
-          }
-        };
-      returnValue = newStatement;
+    if (this.connectionProxy == null || this.connectionProxy.isClosed()) {
+      this.createConnectionProxy();
     }
-    return returnValue;
+    this.validateConnectionProxy();
+  }
+
+  @Override
+  public void destroy() throws Exception {
+    try {
+      if (this.getShutdown()) {
+        if (this.connection != null) {
+          final java.sql.Statement s = this.connection.createStatement();
+          assertNotNull(s);
+          s.executeUpdate("SHUTDOWN IMMEDIATELY");
+          s.close();
+        }
+      }
+    } finally {
+      this.closeConnection();
+      super.destroy();
+    }
   }
 
   private final void closeConnection() {
@@ -124,12 +117,7 @@ public class H2Rule implements TestRule {
     assertTrue(url.startsWith("jdbc:h2:mem:"));
   }
 
-  protected Connection createConnection() throws SQLException {
-    final Connection connection = DriverManager.getConnection(this.getURL(), this.getUsername(), this.getPassword());
-    return connection;
-  }
-
-  private final void createConnectionProxy() throws SQLException {
+  private final void createConnectionProxy() throws Exception {
     this.connection = this.createConnection();
     validateConnection(this.connection);
     final InvocationHandler handler = new InvocationHandler() {
@@ -147,62 +135,19 @@ public class H2Rule implements TestRule {
     this.connectionProxy = proxy;
   }
 
-  protected String getURL() {
-    String url = null;
-    String catalog = System.getProperty("testDatabaseCatalog", "test").trim();
-    if (catalog.isEmpty()) {
-      catalog = "test";
-    }
-    String initCommand = System.getProperty("testDatabaseInitCommand");
-    if (initCommand == null) {
-      final String schema = System.getProperty("testDatabaseSchema", "").trim();
-      if (!schema.isEmpty()) {
-        initCommand = String.format("CREATE SCHEMA %s", schema);
-      }
-    }
-    if (initCommand == null) {
-      url = String.format("jdbc:h2:mem:%s", catalog);
-    } else {
-      url = String.format("jdbc:h2:mem:%s;INIT=%s", catalog, initCommand);
-    }
-    return url;
-  }
+  protected abstract Connection createConnection() throws Exception;
 
-  protected String getUsername() {
-    return System.getProperty("testDatabaseUsername", "sa");
-  }
-
-  protected String getPassword() {
-    return System.getProperty("testDatabasePassword", "");
-  }
-
+  @Override
   public final Connection getConnection() {
     return this.connectionProxy;
   }
 
-  public boolean getShutdown() {
+  private boolean getShutdown() {
     return this.shutdown;
   }
 
-  public void setShutdown(final boolean shutdown) {
+  private void setShutdown(final boolean shutdown) {
     this.shutdown = shutdown;
   }
-
-  private final void shutdown() throws SQLException {
-    if (this.connection != null) {
-      final java.sql.Statement s = this.connection.createStatement();
-      assertNotNull(s);
-      s.executeUpdate("SHUTDOWN IMMEDIATELY");
-      s.close();
-    }
-  }
-
-  public void init() throws SQLException {
-
-  }
-
-  public void cleanup() throws Exception {
-
-  }  
 
 }
