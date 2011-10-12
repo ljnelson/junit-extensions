@@ -44,16 +44,17 @@ public class DataSourceH2Rule extends AbstractH2Rule {
 
   private Context context;
 
-  public DataSourceH2Rule(final String dataSourceName, final String catalog, final String schema, final String username, final String password, final boolean shutdown) {
+  public DataSourceH2Rule(final Context context, final String dataSourceName, final String catalog, final String schema, final String username, final String password, final boolean shutdown) {
     super(catalog, schema, username, password, shutdown);
+    this.setContext(context);
     this.setDataSourceName(dataSourceName);
   }
 
-  protected Context getContext() throws NamingException {
+  public Context getContext() throws NamingException {
     return this.context;
   }
 
-  private void setContext(final Context context) throws NamingException {
+  public void setContext(final Context context) throws NamingException {
     this.context = context;
   }
 
