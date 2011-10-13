@@ -122,6 +122,21 @@ public abstract class AbstractDBRule implements TestRule {
     return this.schema;
   }
 
+  /**
+   * Returns a {@link Connection} to use to connect to the database.
+   * The {@link Connection} may be new, or cached.  No guarantees are
+   * made about whether closing the {@link Connection} will shut down
+   * the associated database.  Careful, safe tests will not
+   * {@linkplain Connection#close() close} the returned {@link
+   * Connection}.
+   *
+   * <p>Implementations of this method must not return {@code
+   * null}.</p>
+   *
+   * @return a non-{@code null} {@link Connection}
+   *
+   * @exception Exception if an error occurs
+   */
   public abstract Connection getConnection() throws Exception;
 
   @Override

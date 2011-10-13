@@ -43,12 +43,9 @@ public class TestCaseH2Rule {
   public final AbstractH2Rule rule = new DriverManagerH2Rule("test", "test", "sa", "", true);
 
   @Test
-  public void testConnectionIsProxyAndUnclosable() throws Exception {
+  public void testGetConnectionReturnsNonNullConnection() throws Exception {
     final Connection connection = this.rule.getConnection();
     assertNotNull(connection);
-    assertTrue(Proxy.isProxyClass(connection.getClass()));
-    connection.close();
-    assertTrue(!connection.isClosed());
   }
 
 }

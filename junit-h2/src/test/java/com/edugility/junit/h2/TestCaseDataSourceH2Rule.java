@@ -63,12 +63,9 @@ public class TestCaseDataSourceH2Rule {
   }
 
   @Test
-  public void testConnectionIsProxyAndUnclosable() throws Exception {
+  public void testGetConnectionReturnsNonNullConnection() throws Exception {
     final Connection connection = this.rule.getConnection();
     assertNotNull(connection);
-    assertTrue(Proxy.isProxyClass(connection.getClass()));
-    connection.close();
-    assertTrue(!connection.isClosed());
   }
 
 }

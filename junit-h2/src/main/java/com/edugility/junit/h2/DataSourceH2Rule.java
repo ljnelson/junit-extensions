@@ -59,7 +59,7 @@ public class DataSourceH2Rule extends AbstractH2Rule {
   }
 
   @Override
-  protected Connection createConnection() throws NamingException, SQLException {
+  public Connection getConnection() throws NamingException, SQLException {
     Connection returnValue = null;
     final String dataSourceName = this.getDataSourceName();
     if (dataSourceName == null) {

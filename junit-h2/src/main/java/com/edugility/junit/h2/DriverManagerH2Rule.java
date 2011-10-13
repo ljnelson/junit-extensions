@@ -38,7 +38,7 @@ public class DriverManagerH2Rule extends AbstractH2Rule {
   }
 
   @Override
-  protected Connection createConnection() throws SQLException {
+  public Connection getConnection() throws SQLException {
     String username = this.getUsername();
     if (username == null) {
       username = System.getProperty("testDatabaseUserName");
@@ -69,7 +69,7 @@ public class DriverManagerH2Rule extends AbstractH2Rule {
       if (schema != null) {
         schema = schema.trim();
         if (!schema.isEmpty()) {
-          initCommand = String.format("CREATE SCHEMA %s", schema);
+          initCommand = String.format("CREATE SCHEMA IF NOT EXISTS %s", schema);
         }
       }
     }

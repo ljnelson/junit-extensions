@@ -27,10 +27,6 @@
  */
 package com.edugility.junit.h2;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -53,10 +49,6 @@ public abstract class AbstractH2Rule extends AbstractDBRule {
 
   private transient boolean shutdown;
 
-  private transient Connection connectionProxy;
-
-  private transient Connection connection;
-
   protected AbstractH2Rule(final String catalog, final String schema, final String username, final String password, final boolean shutdown) {
     super(catalog, schema, username, password);
     this.setShutdown(shutdown);
@@ -67,79 +59,45 @@ public abstract class AbstractH2Rule extends AbstractDBRule {
   public void create() throws Exception {
     super.create();
     this.setShutdown(this.initialShutdownValue);
-    if (this.connectionProxy == null || this.connectionProxy.isClosed()) {
-      this.createConnectionProxy();
-    }
-    this.validateConnectionProxy();
+    final Connection connection = this.getConnection();
+    validateConnection(connection);
   }
 
   @Override
   public void destroy() throws Exception {
+    Connection connection = null;
     try {
       if (this.getShutdown()) {
-        if (this.connection != null) {
-          final java.sql.Statement s = this.connection.createStatement();
+        connection = this.getConnection();
+        if (connection != null) {
+          final java.sql.Statement s = connection.createStatement();
           assertNotNull(s);
           s.executeUpdate("SHUTDOWN IMMEDIATELY");
           s.close();
         }
       }
     } finally {
-      this.closeConnection();
+      closeConnection(connection);
       super.destroy();
     }
   }
 
-  private final void closeConnection() {
-    if (this.connection != null) {
+  private static final void closeConnection(final Connection connection) {
+    if (connection != null) {
       try {
-        this.connection.close();
+        connection.close();
       } catch (final SQLException ignore) {
       }
     }
   }
 
-  private final void validateConnectionProxy() throws SQLException {
-    validateConnectionProxy(this.connectionProxy);
-  }
-
-  private static final void validateConnectionProxy(final Connection connection) throws SQLException {
-    validateConnection(connection);
-    assertTrue(Proxy.isProxyClass(connection.getClass()));
-  }
-
-  private static final void validateConnection(final Connection connection) throws SQLException {
+  public static final void validateConnection(final Connection connection) throws SQLException {
     assertNotNull(connection);
     final DatabaseMetaData dmd = connection.getMetaData();
     assertNotNull(dmd);
     final String url = dmd.getURL();
     assertNotNull(url);
     assertTrue(url.startsWith("jdbc:h2:mem:"));
-  }
-
-  private final void createConnectionProxy() throws Exception {
-    this.connection = this.createConnection();
-    validateConnection(this.connection);
-    final InvocationHandler handler = new InvocationHandler() {
-        @Override
-        public final Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
-          if (proxy != null && method != null && !"close".equals(method.getName())) {
-            return method.invoke(connection);
-          } else {
-            return null; // close() has a void return type
-          }
-        }
-      };
-    final Connection proxy = (Connection)Proxy.newProxyInstance(Connection.class.getClassLoader(), new Class[] { Connection.class }, handler);
-    assertNotNull(proxy);
-    this.connectionProxy = proxy;
-  }
-
-  protected abstract Connection createConnection() throws Exception;
-
-  @Override
-  public final Connection getConnection() {
-    return this.connectionProxy;
   }
 
   private boolean getShutdown() {
