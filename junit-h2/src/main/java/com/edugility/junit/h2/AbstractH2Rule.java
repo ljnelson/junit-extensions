@@ -34,6 +34,8 @@ import java.sql.SQLException;
 
 import com.edugility.junit.db.AbstractDBRule;
 
+import com.edugility.throwables.ThrowableChain;
+
 import org.junit.rules.TestRule;
 
 import org.junit.runner.Description;
@@ -66,6 +68,7 @@ public abstract class AbstractH2Rule extends AbstractDBRule {
   @Override
   public void destroy() throws Exception {
     Connection connection = null;
+    ThrowableChain chain = null;
     try {
       if (this.getShutdown()) {
         connection = this.getConnection();
@@ -76,17 +79,32 @@ public abstract class AbstractH2Rule extends AbstractDBRule {
           s.close();
         }
       }
+    } catch (final Exception everything) {
+      chain = new ThrowableChain(everything);
+      throw chain;
     } finally {
-      closeConnection(connection);
-      super.destroy();
-    }
-  }
-
-  private static final void closeConnection(final Connection connection) {
-    if (connection != null) {
       try {
-        connection.close();
-      } catch (final SQLException ignore) {
+        if (connection != null) {
+          connection.close();
+        }
+      } catch (final Exception everything) {
+        if (chain != null) {
+          chain.add(everything);
+          throw chain;
+        } else {
+          throw everything;
+        }
+      } finally {
+        try {
+          super.destroy();
+        } catch (final Exception everything) {
+          if (chain != null) {
+            chain.add(everything);
+            throw chain;
+          } else {
+            throw everything;
+          }
+        }
       }
     }
   }
