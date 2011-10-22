@@ -113,20 +113,17 @@ public class TestCaseAbstractDBRule {
       final Iterator<Throwable> i = expected.iterator();
       assertNotNull(i);
       assertTrue(i.hasNext());
-      i.next();
+      assertSame(expected, i.next());
       assertTrue(i.hasNext());
-      for (int j = 0; i.hasNext(); j++) {
+      for (int j = 1; i.hasNext(); j++) {
         final Throwable t = i.next();
         assertNotNull(t);
         switch (j) {
-        case 0:
-          assertEquals("create", t.getMessage());
-          break;
         case 1:
-          assertEquals("reset", t.getMessage());          
+          assertEquals("reset", t.getMessage());
           break;
         case 2:
-          assertEquals("disconnect", t.getMessage());
+          assertEquals("disconnect", t.getMessage());          
           break;
         case 3:
           assertEquals("destroy", t.getMessage());
