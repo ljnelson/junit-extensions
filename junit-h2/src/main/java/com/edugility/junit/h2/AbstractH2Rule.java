@@ -68,7 +68,7 @@ public abstract class AbstractH2Rule extends AbstractDBRule {
   @Override
   public void destroy() throws Exception {
     Connection connection = null;
-    ThrowableChain chain = null;
+    ThrowableChain chain = new ThrowableChain();
     try {
       if (this.getShutdown()) {
         connection = this.getConnection();
@@ -80,29 +80,22 @@ public abstract class AbstractH2Rule extends AbstractDBRule {
         }
       }
     } catch (final Exception everything) {
-      chain = new ThrowableChain(everything);
-      throw chain;
+      chain.add(everything);
     } finally {
       try {
         if (connection != null) {
           connection.close();
         }
       } catch (final Exception everything) {
-        if (chain != null) {
-          chain.add(everything);
-          throw chain;
-        } else {
-          throw everything;
-        }
+        chain.add(everything);
       } finally {
         try {
           super.destroy();
         } catch (final Exception everything) {
-          if (chain != null) {
-            chain.add(everything);
+          chain.add(everything);
+        } finally {
+          if (chain.size() > 1) {
             throw chain;
-          } else {
-            throw everything;
           }
         }
       }
