@@ -142,15 +142,6 @@
         <plugin>
           <artifactId>maven-javadoc-plugin</artifactId>
           <version>${mavenJavadocPluginVersion}</version>
-          <configuration>
-            <detectLinks>false</detectLinks>
-            <links>
-              <link>http://download.oracle.com/javaee/6/api/</link>
-            </links>
-            <show>private</show>
-            <sourcetab>2</sourcetab>
-            <stylesheet>maven</stylesheet>
-          </configuration>
         </plugin>
 
         <plugin>
@@ -175,8 +166,6 @@
             <delimiters>
               <delimiter>${*}</delimiter>
             </delimiters>
-            <encoding>UTF8</encoding>
-            <escapeString>\</escapeString>
             <useDefaultDelimiters>false</useDefaultDelimiters>
           </configuration>
         </plugin>
@@ -200,7 +189,6 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${mavenSurefirePluginVersion}</version>
           <configuration>
-            <forkMode>always</forkMode>
             <systemPropertyVariables>
               <defaultDatabaseSchema>${defaultDatabaseSchema}</defaultDatabaseSchema>
               <java.util.logging.config.file>${loggingConfigFile}</java.util.logging.config.file>
@@ -246,7 +234,7 @@
     <!-- Versions -->
     <javaxPersistenceVersion>2.0.3</javaxPersistenceVersion>
     <junitVersion>4.10</junitVersion>
-    <h2Version>1.3.160</h2Version>
+    <h2Version>1.3.161</h2Version>
     <mavenAssemblyPluginVersion>2.2.1</mavenAssemblyPluginVersion>
     <mavenCleanPluginVersion>2.4.1</mavenCleanPluginVersion>
     <mavenCompilerPluginVersion>2.3.2</mavenCompilerPluginVersion>
@@ -274,12 +262,7 @@
     <!-- Other -->
     <defaultDatabaseSchema>test</defaultDatabaseSchema>
     <loggingConfigFile>${basedir}/logging.properties</loggingConfigFile>
-    <maven.compiler.showWarnings>true</maven.compiler.showWarnings>
-    <maven.compiler.source>1.6</maven.compiler.source>
-    <maven.compiler.target>1.6</maven.compiler.target>
-    <maven.resources.escapeString>\</maven.resources.escapeString>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <surefire.useFile>false</surefire.useFile>
     <testDatabaseCatalog>test</testDatabaseCatalog>
     <testDatabaseConnectionURL>jdbc:h2:mem:${testDatabaseCatalog};DB_CLOSE_DELAY=-1</testDatabaseConnectionURL>
     <testDatabaseDriverClass>org.h2.Driver</testDatabaseDriverClass>
@@ -289,6 +272,24 @@
     <testDatabaseUser>sa</testDatabaseUser>
     <testPersistenceUnitName>test</testPersistenceUnitName>
 
+    <!-- maven-compiler-plugin Properties -->
+    <maven.compiler.showWarnings>true</maven.compiler.showWarnings>
+    <maven.compiler.source>1.6</maven.compiler.source>
+    <maven.compiler.target>1.6</maven.compiler.target>
+
+    <!-- maven-javadoc-plugin Properties -->
+    <links>http://download.oracle.com/javaee/6/api/</links>
+    <show>private</show>
+    <sourcetab>2</sourcetab>
+    <stylesheet>maven</stylesheet>
+
+    <!-- maven-resources-plugin Properties -->
+    <maven.resources.escapeString>\</maven.resources.escapeString>    
+    
+    <!-- maven-surefire-plugin Properties -->
+    <forkMode>always</forkMode>
+    <surefire.useFile>false</surefire.useFile>
+
   </properties>
 
   <reporting>
@@ -296,15 +297,6 @@
       <plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>${mavenJavadocPluginVersion}</version>
-        <configuration>
-          <detectLinks>false</detectLinks>
-          <links>
-            <link>http://download.oracle.com/javaee/6/api/</link>
-          </links>
-          <show>private</show>
-          <sourcetab>2</sourcetab>
-          <stylesheet>maven</stylesheet>
-        </configuration>
       </plugin>
     </plugins>
   </reporting>
