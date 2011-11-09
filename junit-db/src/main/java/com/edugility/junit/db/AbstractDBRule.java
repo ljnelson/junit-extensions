@@ -174,9 +174,46 @@ public abstract class AbstractDBRule implements TestRule {
     if (chain == null) {
       throw new IllegalArgumentException("chain", new NullPointerException("chain == null"));
     }
-    this.createDatabase(chain);
-    this.connectDatabase(chain);
-    this.initializeDatabase(chain);
+
+    try {
+      this.createDatabase(chain);
+    } catch (final Throwable boom) {
+      chain.add(boom);
+      try {
+        this.destroy();
+      } catch (final Throwable bang) {
+        chain.add(boom);
+        throw chain;
+      }
+    }
+
+    try {
+      this.connectDatabase(chain);
+    } catch (final Throwable boom) {
+      chain.add(boom);
+      try {
+        this.disconnect();
+      } catch (final Throwable bang) {
+        chain.add(boom);
+      }
+      try {
+        this.destroy();
+      } catch (final Throwable bang) {
+        chain.add(boom);
+        throw chain;
+      }
+    }
+
+    try {
+      this.initializeDatabase(chain);
+    } catch (final Throwable boom) {
+      chain.add(boom);
+      this.postEvaluation(chain);
+    }
+
+    if (chain.size() > 1) {
+      throw chain;
+    }
   }
 
   private final void postEvaluation(final ThrowableChain chain) throws ThrowableChain {
