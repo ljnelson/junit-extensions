@@ -331,6 +331,8 @@ public abstract class AbstractDBRule implements TestRule {
 
   public static class Event extends EventObject {
 
+    private static final long serialVersionUID = 1L;
+
     public Event(final AbstractDBRule source) {
       super(source);
     }
