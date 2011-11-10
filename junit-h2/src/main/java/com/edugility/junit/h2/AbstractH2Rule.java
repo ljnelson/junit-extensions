@@ -52,9 +52,31 @@ public abstract class AbstractH2Rule extends AbstractDBRule {
   private transient boolean shutdown;
 
   protected AbstractH2Rule(final String catalog, final String schema, final String username, final String password, final boolean shutdown) {
-    super(catalog, schema, username, password);
+    super(catalog, schema, username, password);    
     this.setShutdown(shutdown);
     this.initialShutdownValue = this.getShutdown();
+  }
+
+  @Override
+  public String getUsername() {
+    String username = super.getUsername();
+    if (username == null) {
+      username = System.getProperty("testDatabaseUserName");
+    }
+    return username;
+  }
+
+  @Override
+  public String getPassword() {
+    String password = super.getPassword();
+    if (password == null) {
+      if (this.getTreatNullPasswordAsEmpty()) {
+        password = System.getProperty("testDatabasePassword", "");
+      } else {
+        password = System.getProperty("testDatabasePassword");
+      }
+    }
+    return password;
   }
 
   @Override
@@ -75,7 +97,7 @@ public abstract class AbstractH2Rule extends AbstractDBRule {
         if (connection != null) {
           final java.sql.Statement s = connection.createStatement();
           assertNotNull(s);
-          s.executeUpdate("SHUTDOWN IMMEDIATELY");
+          s.executeUpdate("SHUTDOWN");
           s.close();
         }
       }
