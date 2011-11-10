@@ -129,7 +129,7 @@ public class TestCaseAbstractDBRule {
           assertEquals("destroy", t.getMessage());
           break;
         default:
-          fail();
+          fail("Unexpected message for case " + j + ": " + t.getMessage());
         }
       }
     }

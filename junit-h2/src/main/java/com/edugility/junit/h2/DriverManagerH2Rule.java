@@ -47,16 +47,16 @@ public class DriverManagerH2Rule extends AbstractH2Rule {
   /**
    * Creates a new {@link DriverManagerH2Rule}.
    *
-   * @param the catalog, which becomes the H2 database name; may be
-   * {@code null}
+   * @param catalog the catalog, which becomes the H2 database name;
+   * may be {@code null}
    *
-   * @param the default schema; may be {@code null}
+   * @param schema the default schema; may be {@code null}
    *
-   * @param the username to use to {@linkplain
+   * @param username the username to use to {@linkplain
    * DriverManager#getConnection(String, String, String) get
    * <tt>Connection</tt>s}; may be {@code null}
    *
-   * @param the password to use to {@linkplain
+   * @param password the password to use to {@linkplain
    * DriverManager#getConnection(String, String, String) get
    * <tt>Connection</tt>s}; may be {@code null}
    *
@@ -131,7 +131,7 @@ public class DriverManagerH2Rule extends AbstractH2Rule {
    *
    * <ol>
    *
-   * <li>The literal {@link String} "{@code jdbc:h2:mem:"</li>
+   * <li>The literal {@link String} "{@code jdbc:h2:mem:}"</li>
    *
    * <li>The catalog name (see above)</li>
    *

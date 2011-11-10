@@ -35,6 +35,9 @@ import java.util.EventObject;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import com.edugility.throwables.ThrowableChain;
 
 import org.junit.rules.TestRule;
@@ -62,12 +65,24 @@ public abstract class AbstractDBRule implements TestRule {
 
   private boolean nullPasswordIsEmpty;
 
+  protected transient final Logger logger;
+
   protected AbstractDBRule(final String catalog, final String schema, final String username, final String password) {
     super();
+    final Logger logger = this.createLogger();
+    if (logger == null) {
+      this.logger = Logger.getLogger(this.getClass().getName());
+    } else {
+      this.logger = logger;
+    }
     this.setCatalog(catalog);
     this.setSchema(schema);
     this.setUsername(username);
     this.setPassword(password);
+  }
+
+  protected Logger createLogger() {
+    return Logger.getLogger(this.getClass().getName());
   }
 
   public void addListener(final Listener listener) {
@@ -159,74 +174,28 @@ public abstract class AbstractDBRule implements TestRule {
           @Override
           public final void evaluate() throws ThrowableChain {
             final ThrowableChain chain = new ThrowableChain();
-
-            preEvaluation(chain);
-
             try {
-
+              createDatabase();
+              connectDatabase();
+              initializeDatabase();
               base.evaluate();
-
+            } catch (final ThrowableChain throwMe) {
+              throw throwMe;
             } catch (final Throwable boom) {
               chain.add(boom);
             } finally {
-
-              postEvaluation(chain);
-
+              cleanup(chain);
             }
-            
+            if (chain.size() > 1) {
+              throw chain;
+            }
           }
         };
     }
     return returnValue;
   }
 
-  private final void preEvaluation(final ThrowableChain chain) throws ThrowableChain {
-    if (chain == null) {
-      throw new IllegalArgumentException("chain", new NullPointerException("chain == null"));
-    }
-
-    try {
-      this.createDatabase(chain);
-    } catch (final Throwable boom) {
-      chain.add(boom);
-      try {
-        this.destroy();
-      } catch (final Throwable bang) {
-        chain.add(boom);
-        throw chain;
-      }
-    }
-
-    try {
-      this.connectDatabase(chain);
-    } catch (final Throwable boom) {
-      chain.add(boom);
-      try {
-        this.disconnect();
-      } catch (final Throwable bang) {
-        chain.add(boom);
-      }
-      try {
-        this.destroy();
-      } catch (final Throwable bang) {
-        chain.add(boom);
-        throw chain;
-      }
-    }
-
-    try {
-      this.initializeDatabase(chain);
-    } catch (final Throwable boom) {
-      chain.add(boom);
-      this.postEvaluation(chain);
-    }
-
-    if (chain.size() > 1) {
-      throw chain;
-    }
-  }
-
-  private final void postEvaluation(final ThrowableChain chain) throws ThrowableChain {
+  private final void cleanup(final ThrowableChain chain) throws ThrowableChain {
     if (chain == null) {
       throw new IllegalArgumentException("chain", new NullPointerException("chain == null"));
     }
@@ -256,42 +225,27 @@ public abstract class AbstractDBRule implements TestRule {
     }
   }
 
-  private final void createDatabase(final ThrowableChain chain) throws ThrowableChain {
-    try {
-      this.create();
-      this.fireDatabaseCreated();
-    } catch (final Throwable boom) {
-      chain.add(boom);
-      postEvaluation(chain);
-    }
+  private final void createDatabase() throws Exception {
+    this.create();
+    this.fireDatabaseCreated();
   }
 
   public void create() throws Exception {
 
   }
 
-  private final void connectDatabase(final ThrowableChain chain) throws ThrowableChain {
-    try {
-      this.connect();
-      this.fireDatabaseConnected();
-    } catch (final Throwable boom) {
-      chain.add(boom);
-      postEvaluation(chain);
-    }
+  private final void connectDatabase() throws Exception {
+    this.connect();
+    this.fireDatabaseConnected();
   }
 
   public void connect() throws Exception {
 
   }
 
-  private final void initializeDatabase(final ThrowableChain chain) throws ThrowableChain {
-    try {
-      this.initialize();
-      this.fireDatabaseInitialized();
-    } catch (final Throwable boom) {
-      chain.add(boom);
-      postEvaluation(chain);
-    }
+  private final void initializeDatabase() throws Exception {
+    this.initialize();
+    this.fireDatabaseInitialized();
   }
 
   public void initialize() throws Exception {
