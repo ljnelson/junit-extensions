@@ -68,6 +68,12 @@
     <dependencies>
 
       <dependency>
+        <groupId>com.edugility</groupId>
+        <artifactId>edugility-throwables</artifactId>
+        <version>1.0-SNAPSHOT</version>
+      </dependency>
+
+      <dependency>
         <groupId>com.h2database</groupId>
         <artifactId>h2</artifactId>
         <version>${h2Version}</version>
@@ -81,12 +87,21 @@
         <scope>compile</scope>
       </dependency>
 
+    <dependency>
+      <groupId>org.dbunit</groupId>
+      <artifactId>dbunit</artifactId>
+      <version>${dbunitVersion}</version>
+      <scope>compile</scope>
+    </dependency>
+
     </dependencies>
   </dependencyManagement>
 
   <modules>
     <module>junit-db</module>
     <module>junit-h2</module>
+    <module>junit-dbunit</module>
+    <module>junit-dbunit-h2</module>
   </modules>
 
   <build>
@@ -235,6 +250,7 @@
   <properties>
 
     <!-- Versions -->
+    <dbunitVersion>2.4.8</dbunitVersion>
     <junitVersion>4.10</junitVersion>
     <h2Version>1.3.161</h2Version>
     <mavenAssemblyPluginVersion>2.2.1</mavenAssemblyPluginVersion>
@@ -300,6 +316,5 @@
       </plugin>
     </plugins>
   </reporting>
-
 
 </project>

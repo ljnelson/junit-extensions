@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>junit-db</artifactId>
+  <artifactId>junit-dbunit-h2</artifactId>
 
   <parent>
     <groupId>com.edugility</groupId>
@@ -10,19 +10,20 @@
     <version>1.0-SNAPSHOT</version>
   </parent>
 
-  <name>JUnit Database-Oriented Extensions</name>
-  <description>JUnit Database-Oriented Extensions</description>
+  <name>JUnit DBUnit H2 Extensions</name>
+  <description>JUnit DBUnit H2 Extensions</description>
 
   <dependencies>
 
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>junit-h2</artifactId>
+      <version>${project.version}</version>
     </dependency>
 
     <dependency>
-      <groupId>com.edugility</groupId>
-      <artifactId>edugility-throwables</artifactId>
+      <groupId>org.dbunit</groupId>
+      <artifactId>dbunit</artifactId>
     </dependency>
 
   </dependencies>
