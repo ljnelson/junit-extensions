@@ -33,7 +33,7 @@ import com.edugility.throwables.ThrowableChain;
 
 import org.dbunit.DefaultOperationListener;
 import org.dbunit.IOperationListener;
-import org.dbunit.JdbcDatabaseTester;
+import org.dbunit.PropertiesBasedJdbcDatabaseTester;
 
 import org.dbunit.dataset.DefaultDataSet;
 import org.dbunit.dataset.IDataSet;
@@ -51,10 +51,18 @@ import org.junit.runners.model.Statement;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class JdbcDatabaseTesterRule extends JdbcDatabaseTester implements TestRule {
+public class PropertiesBasedJdbcDatabaseTesterRule extends PropertiesBasedJdbcDatabaseTester implements TestRule {
 
-  public JdbcDatabaseTesterRule(final String driverClassName, final String connectionURL, final String username, final String password, final String schema, IDataSet dataSet, final DatabaseOperation setUpOperation, final DatabaseOperation tearDownOperation, final IOperationListener listener) throws Exception {
-    super(driverClassName, connectionURL, username, password, schema);
+  public PropertiesBasedJdbcDatabaseTesterRule() throws Exception {
+    this(null);
+  }
+
+  public PropertiesBasedJdbcDatabaseTesterRule(final IDataSet dataSet) throws Exception {
+    this(dataSet, DatabaseOperation.CLEAN_INSERT, DatabaseOperation.NONE, new DefaultOperationListener());
+  }
+
+  public PropertiesBasedJdbcDatabaseTesterRule(IDataSet dataSet, final DatabaseOperation setUpOperation, final DatabaseOperation tearDownOperation, final IOperationListener listener) throws Exception {
+    super();
     if (dataSet == null) {
       dataSet = this.findDataSet();
     }

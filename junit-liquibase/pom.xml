@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>junit-dbunit</artifactId>
+  <artifactId>junit-liquibase</artifactId>
 
   <parent>
     <groupId>com.edugility</groupId>
@@ -10,31 +10,19 @@
     <version>1.0-SNAPSHOT</version>
   </parent>
 
-  <name>JUnit DBUnit Extensions</name>
-  <description>JUnit DBUnit Extensions</description>
+  <name>JUnit Liquibase Extensions</name>
+  <description>JUnit Liquibase Extensions</description>
 
   <dependencies>
 
     <dependency>
-      <groupId>com.edugility</groupId>
-      <artifactId>edugility-throwables</artifactId>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>org.dbunit</groupId>
-      <artifactId>dbunit</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-      <scope>test</scope>
+      <groupId>org.liquibase</groupId>
+      <artifactId>liquibase-core</artifactId>
     </dependency>
 
   </dependencies>
