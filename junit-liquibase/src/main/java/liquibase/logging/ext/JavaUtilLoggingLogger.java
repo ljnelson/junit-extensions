@@ -61,7 +61,7 @@ public class JavaUtilLoggingLogger extends AbstractLogger {
   
   @Override
   public final int getPriority() {
-    return 7; // arbitrary number greater than 1
+    return 3; // arbitrary number greater than 1
   }
   
   @Override
@@ -107,6 +107,23 @@ public class JavaUtilLoggingLogger extends AbstractLogger {
   public void setName(final String name) {
     this.logger = Logger.getLogger(name);
   }
+
+  private final StackTraceElement getCaller() {
+    StackTraceElement returnValue = null;
+    final StackTraceElement[] st = Thread.currentThread().getStackTrace();
+    if (st != null && st.length > 0) {
+      for (final StackTraceElement element : st) {
+        if (element != null && element.getMethodName() != null) {
+          final String className = element.getClassName();
+          if (className != null && !className.equals("java.lang.Thread") && !className.equals(this.getClass().getName())) {
+            returnValue = element;
+            break;
+          }
+        }
+      }
+    }
+    return returnValue;
+  }
   
   @Override
   public void info(final String message) {
@@ -116,10 +133,11 @@ public class JavaUtilLoggingLogger extends AbstractLogger {
   @Override
   public void info(final String message, final Throwable throwable) {
     if (this.logger != null && this.logger.isLoggable(Level.INFO)) {
-      if (throwable == null) {
-        this.logger.log(Level.INFO, message);
+      final StackTraceElement ste = this.getCaller();
+      if (throwable == null) {        
+        this.logger.logp(Level.INFO, ste.getClassName(), ste.getMethodName(), message);
       } else {
-        this.logger.log(Level.INFO, message, throwable);
+        this.logger.logp(Level.INFO, ste.getClassName(), ste.getMethodName(), message, throwable);
       }
     }
   }
@@ -132,10 +150,11 @@ public class JavaUtilLoggingLogger extends AbstractLogger {
   @Override
   public void warning(final String message, final Throwable throwable) {
     if (this.logger != null && this.logger.isLoggable(Level.WARNING)) {
+      final StackTraceElement ste = this.getCaller();
       if (throwable == null) {
-        this.logger.log(Level.WARNING, message);
+        this.logger.logp(Level.WARNING, ste.getClassName(), ste.getMethodName(), message);
       } else {
-        this.logger.log(Level.WARNING, message, throwable);
+        this.logger.logp(Level.WARNING, ste.getClassName(), ste.getMethodName(), message, throwable);
       }
     }
   }
@@ -148,10 +167,11 @@ public class JavaUtilLoggingLogger extends AbstractLogger {
   @Override
   public void severe(final String message, final Throwable throwable) {
     if (this.logger != null && this.logger.isLoggable(Level.SEVERE)) {
+      final StackTraceElement ste = this.getCaller();
       if (throwable == null) {
-        this.logger.log(Level.SEVERE, message);
+        this.logger.logp(Level.SEVERE, ste.getClassName(), ste.getMethodName(), message);
       } else {
-        this.logger.log(Level.SEVERE, message, throwable);
+        this.logger.logp(Level.SEVERE, ste.getClassName(), ste.getMethodName(), message, throwable);
       }
     }
   }
@@ -164,10 +184,11 @@ public class JavaUtilLoggingLogger extends AbstractLogger {
   @Override
   public void debug(final String message, final Throwable throwable) {
     if (this.logger != null && this.logger.isLoggable(Level.FINER)) {
+      final StackTraceElement ste = this.getCaller();
       if (throwable == null) {
-        this.logger.log(Level.FINER, message);
+        this.logger.logp(Level.FINER, ste.getClassName(), ste.getMethodName(), message);
       } else {
-        this.logger.log(Level.FINER, message, throwable);
+        this.logger.logp(Level.FINER, ste.getClassName(), ste.getMethodName(), message, throwable);
       }
     }
   }

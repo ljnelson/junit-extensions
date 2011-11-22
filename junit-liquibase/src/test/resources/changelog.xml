@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd" logicalFilePath="test">
+
+  <!-- $Id$ -->
+
+  <changeSet id="test.rock.TableCreation" author="ljnelson" logicalFilePath="test">
+    <createTable tableName="rock">
+      <column name="id" type="bigint">
+        <constraints primaryKey="true"/>
+      </column>
+      <column name="text" type="varchar(255)"/>
+    </createTable>
+  </changeSet>
+
+</databaseChangeLog>
