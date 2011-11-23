@@ -63,11 +63,11 @@ public class TestCaseLiquibaseRule {
   }
 
   @Rule
-  public final LiquibaseRule liquibaseRule;
+  public final DriverManagerLiquibaseRule liquibaseRule;
 
   public TestCaseLiquibaseRule() {
     super();
-    this.liquibaseRule = new LiquibaseRule("jdbc:h2:mem:test;INIT=CREATE SCHEMA IF NOT EXISTS test;DB_CLOSE_DELAY=-1", "sa", "", "test", "changelog.xml", "test");
+    this.liquibaseRule = new DriverManagerLiquibaseRule("jdbc:h2:mem:test;INIT=CREATE SCHEMA IF NOT EXISTS test;DB_CLOSE_DELAY=-1", "sa", "", "test", "changelog.xml", "test");
   }
 
   @Test

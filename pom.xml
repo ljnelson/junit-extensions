@@ -76,7 +76,7 @@
       <dependency>
         <groupId>com.edugility</groupId>
         <artifactId>liquibase-jul</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>${liquibaseJulVersion}</version>
         <scope>test</scope>
       </dependency>
 
@@ -286,6 +286,7 @@
     <junitVersion>4.10</junitVersion>
     <h2Version>1.3.161</h2Version>
     <liquibaseVersion>2.0.3</liquibaseVersion>
+    <liquibaseJulVersion>1.1</liquibaseJulVersion>
     <mavenAssemblyPluginVersion>2.2.1</mavenAssemblyPluginVersion>
     <mavenCleanPluginVersion>2.4.1</mavenCleanPluginVersion>
     <mavenCompilerPluginVersion>2.3.2</mavenCompilerPluginVersion>

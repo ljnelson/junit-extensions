@@ -53,6 +53,9 @@ import liquibase.database.jvm.JdbcConnection;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
 
+import liquibase.exception.DatabaseException;
+import liquibase.exception.LiquibaseException;
+
 import liquibase.resource.ClassLoaderResourceAccessor;
 import liquibase.resource.CompositeResourceAccessor;
 import liquibase.resource.FileSystemResourceAccessor;
@@ -66,7 +69,7 @@ import org.junit.runner.Description;
 
 import org.junit.runners.model.Statement;
 
-public class LiquibaseRule implements TestRule {
+public abstract class AbstractLiquibaseRule implements TestRule {
 
   protected transient Logger logger;
 
@@ -74,15 +77,13 @@ public class LiquibaseRule implements TestRule {
 
   private String password;
 
-  private String url;
-
   private String schema;
 
   private String[] contexts;
 
   private String changeLogResourceName;
 
-  public LiquibaseRule(final String url, final String username, final String password, final String schema, final String changeLogResourceName, final String... changeLogContexts) {
+  public AbstractLiquibaseRule(final String username, final String password, final String schema, final String changeLogResourceName, final String... changeLogContexts) {
     super();
     final Logger logger = this.createLogger();
     if (logger == null) {
@@ -90,7 +91,6 @@ public class LiquibaseRule implements TestRule {
     } else {
       this.logger = logger;
     }
-    this.setConnectionURL(url);
     this.setUsername(username);
     this.setPassword(password);
     this.setSchema(schema);
@@ -153,7 +153,62 @@ public class LiquibaseRule implements TestRule {
     this.contexts = changeLogContexts;
   }
 
-  public void update() throws Exception {
+  /**
+   * Runs a <a href="http://liquibase.org/">Liquibase</a> <a
+   * href="http://www.liquibase.org/manual/update">update</a>
+   * operation.
+   *
+   * <p>This method performs the following steps in order:</p>
+   *
+   * <ol>
+   *
+   * <li>Gather data needed for the <a
+   * href="http://www.liquibase.org/manual/update">Liquibase
+   * update</a> operation.  Notable here is that if {@code null} was
+   * originally supplied as the value for the {@link
+   * #getChangeLogResourceName() changeLogResourceName} property, then
+   * {@code changelog.xml} will be used instead.</li>
+   *
+   * <li>Create a {@link ResourceAccessor} by calling the {@link
+   * #createResourceAccessor()} method.  By default, a {@link
+   * CompositeResourceAccessor} will be returned that evaluates
+   * resources against the filesystem, then the classpath, then as
+   * URLs.</li>
+   *
+   * <li>Using the {@link ResourceAccessor}, attempt to open a
+   * connection to the changelog resource to see if it exists.  If it
+   * does not exist, this method effectively returns.</li>
+   *
+   * <li>Get a {@link Connection} to the appropriate {@link Database}
+   * by calling the {@link #getConnection()} method.  <strong>This
+   * {@link Connection} will be {@linkplain Connection#close() closed}
+   * by this method in all cases.</strong></li>
+   *
+   * <li>Assemble the {@linkplain #getChangeLogContexts() changelog
+   * contexts} into a single comma-delimited {@link String}.</li>
+   *
+   * <li>Create a new {@link Liquibase} instance from the data that
+   * has been gathered so far.</li>
+   *
+   * <li>Invoke the {@link Liquibase#update(String)} method.</li>
+   *
+   * <li>{@linkplain Liquibase#forceReleaseLocks() Forcibly release
+   * any database locks acquired by the <tt>Liquibase</tt>
+   * instance}.</li>
+   *
+   * </ol>
+   *
+   * @exception DatabaseException if an error occurs while trying to
+   * determine the appropriate {@link Database} class to use
+   *
+   * @exception LiquibaseException if an error occurs with the {@link
+   * Liquibase} instance creation or the invocation of its {@link
+   * Liquibase#update(String)} method
+   *
+   * @exception SQLException if an error occurs while allocating a
+   * {@link Connection} to the database
+   */
+  public void update() throws DatabaseException, LiquibaseException, SQLException {
     if (this.logger != null && this.logger.isLoggable(Level.FINER)) {
       this.logger.entering(this.getClass().getName(), "update");
     }
@@ -182,9 +237,6 @@ public class LiquibaseRule implements TestRule {
           database.setDefaultSchemaName(schema);
         }
 
-        final liquibase.logging.Logger liquibaseLogger = liquibase.logging.LogFactory.getLogger();
-        assert liquibaseLogger != null;
-        
         final String changeLogContext;
         final String[] changeLogContexts = this.getChangeLogContexts();
         if (changeLogContexts == null || changeLogContexts.length <= 0) {
@@ -233,12 +285,36 @@ public class LiquibaseRule implements TestRule {
     }
   }
 
+  /**
+   * Returns {@code true} if the specified {@code
+   * changeLogResourceName} can be opened using the supplied {@link
+   * ResourceAccessor}.
+   *
+   * <p>Any {@link IOException}s encountered by the supplied {@link
+   * ResourceAccessor} will be {@linkplain Logger#log(LogRecord)
+   * logged} by this {@link AbstractLiquibaseRule}'s {@link #logger
+   * Logger} at the {@link Level#SEVERE SEVERE} level.</p>
+   *
+   * @param changeLogResourceName the name of a changelog resource;
+   * may be {@code null} in which case {@code false} will be returned
+   *
+   * @param resourceAccessor the {@link ResourceAccessor} to use to
+   * attempt to {@linkplain
+   * ResourceAccessor#getResourceAsStream(String) open and immediately
+   * close an <tt>InputStream</tt>} to the supplied {@code
+   * changeLogResourceName}; may be {@code null} in which case {@code
+   * false} will be returned
+   *
+   * @return {@code true} if the supplied {@code
+   * changeLogResourceName} can be opened with the supplied {@link
+   * ResourceAccessor}; {@code false} in all other cases
+   */
   private final boolean changeLogExists(final String changeLogResourceName, final ResourceAccessor resourceAccessor) {
     if (this.logger != null && this.logger.isLoggable(Level.FINER)) {
       this.logger.entering(this.getClass().getName(), "changeLogExists", new Object[] { changeLogResourceName, resourceAccessor });
     }
     boolean returnValue = false;
-    if (changeLogResourceName != null) {
+    if (changeLogResourceName != null && resourceAccessor != null) {
       InputStream stream = null;
       try {
         stream = resourceAccessor.getResourceAsStream(changeLogResourceName);
@@ -285,32 +361,13 @@ public class LiquibaseRule implements TestRule {
     this.password = password;
   }
 
-  public String getConnectionURL() {
-    return this.url;
-  }
-
-  public void setConnectionURL(final String url) {
-    this.url = url;
-  }
-
-  public Connection getConnection() throws SQLException {
-    final String connectionURL = this.getConnectionURL();
-    if (connectionURL == null) {
-      throw new IllegalStateException("getConnectionURL() == null");
-    }
-    final String username = this.getUsername();
-    if (username == null) {
-      return DriverManager.getConnection(connectionURL);
-    } else {
-      return DriverManager.getConnection(connectionURL, username, this.getPassword());
-    }    
-  }
+  public abstract Connection getConnection() throws SQLException;
 
   public ResourceAccessor createResourceAccessor() {
     return new CompositeResourceAccessor(new FileSystemResourceAccessor(), new ClassLoaderResourceAccessor(), new URLResourceAccessor());
   }
 
-  public static Database findCorrectDatabaseImplementation(final Connection connection) throws Exception {
+  public static Database findCorrectDatabaseImplementation(final Connection connection) throws DatabaseException {
     Database database = null;
     if (connection != null) {
       final DatabaseFactory databaseFactory = DatabaseFactory.getInstance();
