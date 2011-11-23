@@ -263,6 +263,24 @@
       </plugins>
     </pluginManagement>
 
+    <extensions>
+      <extension>
+        <groupId>org.apache.maven.scm</groupId>
+        <artifactId>maven-scm-manager-plexus</artifactId>
+        <version>${mavenScmManagerPlexusVersion}</version>
+      </extension>
+      <extension>
+        <groupId>org.apache.maven.scm</groupId>
+        <artifactId>maven-scm-provider-gitexe</artifactId>
+        <version>${mavenScmProviderGitexeVersion}</version>
+      </extension>
+      <extension>
+        <groupId>org.kathrynhuxtable.maven.wagon</groupId>
+        <artifactId>wagon-gitsite</artifactId>
+        <version>0.4-SNAPSHOT</version>
+      </extension>
+    </extensions>
+
     <resources>
       <resource>
         <directory>${basedir}/src/main/resources</directory>
