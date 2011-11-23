@@ -70,11 +70,7 @@ public abstract class AbstractH2Rule extends AbstractDBRule {
   public String getPassword() {
     String password = super.getPassword();
     if (password == null) {
-      if (this.getTreatNullPasswordAsEmpty()) {
-        password = System.getProperty("testDatabasePassword", "");
-      } else {
-        password = System.getProperty("testDatabasePassword");
-      }
+      password = System.getProperty("testDatabasePassword");
     }
     return password;
   }

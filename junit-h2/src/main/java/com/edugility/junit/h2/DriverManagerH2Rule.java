@@ -84,11 +84,7 @@ public class DriverManagerH2Rule extends AbstractH2Rule {
   public Connection getConnection() throws SQLException {
     final String username = this.getUsername();
     if (username != null) {
-      String password = this.getPassword();
-      if (password == null && this.getTreatNullPasswordAsEmpty()) {
-        password = "";
-      }
-      return DriverManager.getConnection(this.getURL(), username, password);
+      return DriverManager.getConnection(this.getURL(), username, this.getPassword());
     } else {
       return DriverManager.getConnection(this.getURL());
     }

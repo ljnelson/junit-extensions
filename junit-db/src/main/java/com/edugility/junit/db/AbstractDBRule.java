@@ -63,8 +63,6 @@ public abstract class AbstractDBRule implements TestRule {
 
   private String password;
 
-  private boolean nullPasswordIsEmpty;
-
   protected transient final Logger logger;
 
   protected AbstractDBRule(final String catalog, final String schema, final String username, final String password) {
@@ -121,14 +119,6 @@ public abstract class AbstractDBRule implements TestRule {
 
   public String getPassword() {
     return this.password;
-  }
-
-  public void setTreatNullPasswordAsEmpty(final boolean empty) {
-    this.nullPasswordIsEmpty = empty;
-  }
-
-  public boolean getTreatNullPasswordAsEmpty() {
-    return this.nullPasswordIsEmpty;
   }
 
   public void setCatalog(final String catalog) {
