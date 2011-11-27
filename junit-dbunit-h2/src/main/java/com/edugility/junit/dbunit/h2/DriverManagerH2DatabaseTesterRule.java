@@ -30,6 +30,8 @@ package com.edugility.junit.dbunit.h2;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import com.edugility.junit.db.ConnectionDescriptor;
+
 import com.edugility.junit.h2.DriverManagerH2Rule;
 
 import org.dbunit.JdbcDatabaseTester;
@@ -61,6 +63,18 @@ public class DriverManagerH2DatabaseTesterRule extends DriverManagerH2Rule {
     if (this.tester == null) {
       throw new IllegalStateException("createDatabaseTester() == null");
     }
+  }
+
+  public DriverManagerH2DatabaseTesterRule(final ConnectionDescriptor descriptor, final boolean shutDown, final IDataSet dataSet, final DatabaseOperation setUpOperation, final DatabaseOperation tearDownOperation, final IOperationListener listener) {
+    this(descriptor == null ? null : descriptor.getCatalog(),
+         descriptor == null ? null : descriptor.getSchema(),
+         descriptor == null ? null : descriptor.getUsername(),
+         descriptor == null ? null : descriptor.getPassword(),
+         shutDown,
+         dataSet,
+         setUpOperation,
+         tearDownOperation,
+         listener);
   }
 
   protected IDatabaseTester createDatabaseTester(final IDataSet dataSet, final DatabaseOperation setUpOperation, final DatabaseOperation tearDownOperation, final IOperationListener listener) {

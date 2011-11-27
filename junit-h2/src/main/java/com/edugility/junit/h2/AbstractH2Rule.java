@@ -33,6 +33,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 import com.edugility.junit.db.AbstractDBRule;
+import com.edugility.junit.db.ConnectionDescriptor;
 
 import com.edugility.throwables.ThrowableChain;
 
@@ -55,6 +56,14 @@ public abstract class AbstractH2Rule extends AbstractDBRule {
     super(catalog, schema, username, password);    
     this.setShutdown(shutdown);
     this.initialShutdownValue = this.getShutdown();
+  }
+
+  protected AbstractH2Rule(final ConnectionDescriptor descriptor, final boolean shutdown) {
+    this(descriptor == null ? null : descriptor.getCatalog(),
+         descriptor == null ? null : descriptor.getSchema(),
+         descriptor == null ? null : descriptor.getUsername(),
+         descriptor == null ? null : descriptor.getPassword(),
+         shutdown);
   }
 
   @Override

@@ -31,6 +31,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+import com.edugility.junit.db.ConnectionDescriptor;
+
 /**
  * An {@link AbstractH2Rule} that uses {@link
  * DriverManager#getConnection(String, String, String)} to obtain a
@@ -70,6 +72,17 @@ public class DriverManagerH2Rule extends AbstractH2Rule {
     super(catalog, schema, username, password, shutdown);
   }
 
+  /**
+   * Creates a new {@link DriverManagerH2Rule}.
+   *
+   * @param descriptor the {@link ConnectionDescriptor} describing the
+   * connection to the database to be established; must not be {@code
+   * null}
+   */
+  public DriverManagerH2Rule(final ConnectionDescriptor descriptor, final boolean shutdown) {
+    super(descriptor, shutdown);
+  }
+  
   /**
    * Returns a {@link Connection} as returned by the {@link
    * DriverManager#getConnection(String, String, String)} method.

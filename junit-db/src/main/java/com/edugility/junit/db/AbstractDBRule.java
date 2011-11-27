@@ -152,6 +152,29 @@ public abstract class AbstractDBRule implements TestRule {
   }
 
   /**
+   * Creates a new {@link AbstractDBRule}.
+   *
+   * @param descriptor the {@link ConnectionDescriptor} providing
+   * most&mdash;if not all&mdash;of the connection information; may be
+   * {@code null}
+   */
+  protected AbstractDBRule(final ConnectionDescriptor descriptor) {
+    super();
+    final Logger logger = this.createLogger();
+    if (logger == null) {
+      this.logger = Logger.getLogger(this.getClass().getName());
+    } else {
+      this.logger = logger;
+    }
+    if (descriptor != null) {
+      this.setCatalog(descriptor.getCatalog());
+      this.setSchema(schema);
+      this.setUsername(username);
+      this.setPassword(password);
+    }
+  }
+
+  /**
    * Creates a new {@link Logger} for use by this {@link
    * AbstractDBRule}.  This method never returns {@code null}, and any
    * overrides of it must not either.

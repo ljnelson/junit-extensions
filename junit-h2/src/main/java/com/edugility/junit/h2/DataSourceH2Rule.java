@@ -36,6 +36,8 @@ import javax.naming.NamingException;
 
 import javax.sql.DataSource;
 
+import com.edugility.junit.db.ConnectionDescriptor;
+
 import static org.junit.Assert.*;
 
 public class DataSourceH2Rule extends AbstractH2Rule {
@@ -46,6 +48,12 @@ public class DataSourceH2Rule extends AbstractH2Rule {
 
   public DataSourceH2Rule(final Context context, final String dataSourceName, final String catalog, final String schema, final String username, final String password, final boolean shutdown) throws NamingException {
     super(catalog, schema, username, password, shutdown);
+    this.setContext(context);
+    this.setDataSourceName(dataSourceName);
+  }
+
+  public DataSourceH2Rule(final Context context, final String dataSourceName, final ConnectionDescriptor descriptor, final boolean shutdown) throws NamingException {
+    super(descriptor, shutdown);
     this.setContext(context);
     this.setDataSourceName(dataSourceName);
   }

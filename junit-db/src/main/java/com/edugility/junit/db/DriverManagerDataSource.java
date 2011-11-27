@@ -107,6 +107,26 @@ public final class DriverManagerDataSource implements DataSource {
   }
 
   /**
+   * Creates a new [@link DriverManagerDataSource}.
+   *
+   * @param descriptor a {@link ConnectionDescriptor} whose {@link
+   * ConnectionDescriptor#getConnectionURL() connectionURL}, {@link
+   * ConnectionDescriptor#getUsername() username} and {@link
+   * ConnectionDescriptor#getPassword() password} properties are used
+   * to supply values to the {@link #DriverManagerDataSource(String,
+   * String, String)} constructor
+   *
+   * @exception IllegalArgumentException if {@code descriptor} is
+   * {@code null} or if the return value of the {@link
+   * ConnectionDescriptor#getConnectionURL()} method is {@code null}
+   */
+  public DriverManagerDataSource(final ConnectionDescriptor descriptor) {
+    this(descriptor == null ? null : descriptor.getConnectionURL(),
+         descriptor == null ? null : descriptor.getUsername(),
+         descriptor == null ? null : descriptor.getPassword());
+  }
+
+  /**
    * Creates a new {@link DriverManagerDataSource} that will use the
    * supplied {@code username} and {@code password} to obtain {@link Connection}s, but no
    * password.

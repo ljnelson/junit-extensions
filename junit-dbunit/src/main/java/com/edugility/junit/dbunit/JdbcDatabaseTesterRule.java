@@ -29,6 +29,8 @@ package com.edugility.junit.dbunit;
 
 import java.net.URL;
 
+import com.edugility.junit.db.ConnectionDescriptor;
+
 import com.edugility.throwables.ThrowableChain;
 
 import org.dbunit.DefaultOperationListener;
@@ -52,6 +54,18 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class JdbcDatabaseTesterRule extends JdbcDatabaseTester implements TestRule {
+
+  public JdbcDatabaseTesterRule(final String driverClassName, final ConnectionDescriptor descriptor, final IDataSet dataSet, final DatabaseOperation setUpOperation, final DatabaseOperation tearDownOperation, final IOperationListener listener) throws Exception {
+    this(driverClassName,
+         descriptor == null ? null : descriptor.getConnectionURL(),
+         descriptor == null ? null : descriptor.getUsername(),
+         descriptor == null ? null : descriptor.getPassword(),
+         descriptor == null ? null : descriptor.getSchema(),
+         dataSet,
+         setUpOperation,
+         tearDownOperation,
+         listener);
+  }
 
   public JdbcDatabaseTesterRule(final String driverClassName, final String connectionURL, final String username, final String password, final String schema, IDataSet dataSet, final DatabaseOperation setUpOperation, final DatabaseOperation tearDownOperation, final IOperationListener listener) throws Exception {
     super(driverClassName, connectionURL, username, password, schema);
