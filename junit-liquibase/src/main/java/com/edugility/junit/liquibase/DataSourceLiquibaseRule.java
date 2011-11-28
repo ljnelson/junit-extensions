@@ -27,6 +27,7 @@
  */
 package com.edugility.junit.liquibase;
 
+import com.edugility.junit.db.ConnectionDescriptor;
 import com.edugility.junit.db.DriverManagerDataSource;
 
 import java.io.PrintWriter;
@@ -124,6 +125,44 @@ public class DataSourceLiquibaseRule extends AbstractLiquibaseRule {
     super(username, password, schema, changeLogResourceName, changeLogContexts);
     this.setDataSource(new DriverManagerDataSource(url));
   }
+
+  /**
+   * Creates a new {@link DataSourceLiquibaseRule}.
+   *
+   * @param descriptor the {@link ConnectionDescriptor} describing how
+   * a connection to the underlying database is to be obtained; must
+   * not be {@code null}
+   *
+   * @param changeLogResourceName the name of the changelog resource
+   * that Liquibase will use to operate on the database; if {@code
+   * null}, then this class will behave as though {@code
+   * changelog.xml} had been supplied instead
+   *
+   * @param changeLogContexts any changelog contexts to supply to
+   * Liquibase; may be {@code null} or empty
+   *
+   * @exception IllegalArgumentException if the {@code descriptor}
+   * parameter is {@code null}
+   */
+  public DataSourceLiquibaseRule(final ConnectionDescriptor descriptor, final String changeLogResourceName, final String... changeLogContexts) {
+    super(descriptor, changeLogResourceName, changeLogContexts);
+    this.setDataSource(descriptor);
+  }
+
+  /**
+   * Creates a new {@link DataSourceLiquibaseRule}.
+   *
+   * @param descriptor the {@link ConnectionDescriptor} describing how
+   * a connection to the underlying database is to be obtained; must
+   * not be {@code null}
+   *
+   * @exception IllegalArgumentException if the {@code descriptor}
+   * parameter is {@code null}
+   */
+  public DataSourceLiquibaseRule(final ConnectionDescriptor descriptor) {
+    this(descriptor, "changelog.xml");
+  }
+
 
   /**
    * Sets the {@link javax.sql.DataSource} to be used by this {@link

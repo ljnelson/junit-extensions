@@ -27,106 +27,151 @@
  */
 package com.edugility.junit.db;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
+import java.io.PrintWriter;
 import java.io.Serializable;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import java.util.Properties;
+
 import javax.sql.DataSource;
 
-public class ConnectionDescriptor implements Serializable {
+public class ConnectionDescriptor extends Properties implements DataSource, Serializable {
+
+  public static final String CATALOG = "com.edugility.junit.db.catalog";
+
+  public static final String CONNECTION_URL = "javax.persistence.jdbc.url";
+
+  public static final String DATA_SOURCE = "com.edugility.junit.db.datasource";
+
+  public static final String DRIVER_CLASS_NAME = "javax.persistence.jdbc.driver";
+
+  public static final String PASSWORD = "javax.persistence.jdbc.password";
+
+  public static final String SCHEMA = "com.edugility.junit.db.schema";
+
+  public static final String USERNAME = "javax.persistence.jdbc.user";
 
   private static final long serialVersionUID = 1L;
 
-  private final String connectionURL;
-
-  private final String catalog;
-
-  private final String schema;
-
-  private final String username;
-
-  private final String password;
-
-  private transient String hashCodeString;
-
   public ConnectionDescriptor(final String connectionURL, final String catalog, final String schema, final String username, final String password) {
     super();
-    this.connectionURL = connectionURL;
-    this.catalog = catalog;
-    this.schema = schema;
-    this.username = username;
-    this.password = password;
-    if (connectionURL == null) {
-      throw new IllegalArgumentException("connectionURL", new NullPointerException("connectionURL"));
+    this.setProperty(CONNECTION_URL, connectionURL);
+    this.setProperty(CATALOG, catalog);
+    this.setProperty(SCHEMA, schema);
+    this.setProperty(USERNAME, username);
+    this.setProperty(PASSWORD, password);
+  }
+
+  public final DataSource getDataSource() {
+    DataSource dataSource = (DataSource)this.get(DATA_SOURCE);
+    if (dataSource == null) {
+      final String connectionURL = this.getConnectionURL();
+      if (connectionURL != null) {
+        dataSource = new DriverManagerDataSource(this);
+        this.put(DATA_SOURCE, dataSource);
+      }
     }
-    this.hashCodeString = String.valueOf(this.getConnectionURL() + this.getCatalog() + this.getSchema() + this.getUsername() + this.getPassword());
+    return dataSource;
+  }
+
+  public String getDriverClassName() {
+    return this.getProperty(DRIVER_CLASS_NAME);
   }
 
   public String getConnectionURL() {
-    return this.connectionURL;
+    return this.getProperty(CONNECTION_URL);
   }
 
   public String getCatalog() {
-    return this.catalog;
+    return this.getProperty(CATALOG);
   }
 
   public String getSchema() {
-    return this.schema;
+    return this.getProperty(SCHEMA);
   }
 
   public String getUsername() {
-    return this.username;
+    return this.getProperty(USERNAME);
   }
 
   public String getPassword() {
-    return this.password;
+    return this.getProperty(PASSWORD);
   }
 
-  public Connection getConnection() throws SQLException {
-    return this.getConnection(new DriverManagerDataSource(this.getConnectionURL(), this.getUsername(), this.getPassword()));
+  @Override
+  public int getLoginTimeout() throws SQLException {
+    int timeout = 0;
+    final DataSource dataSource = this.getDataSource();
+    if (dataSource != null) {
+      timeout = dataSource.getLoginTimeout();
+    }
+    return timeout;
+  }
+
+  @Override
+  public void setLoginTimeout(final int timeout) throws SQLException {
+    final DataSource ds = this.getDataSource();
+    if (ds != null) {
+      ds.setLoginTimeout(timeout);
+    }
+  }
+
+  @Override
+  public PrintWriter getLogWriter() throws SQLException {
+    PrintWriter writer = null;
+    final DataSource ds = this.getDataSource();
+    if (ds != null) {
+      writer = ds.getLogWriter();
+    } else {
+      writer = new PrintWriter(System.out);
+    }
+    return writer;
+  }
+
+  @Override
+  public void setLogWriter(final PrintWriter writer) throws SQLException {
+    final DataSource ds = this.getDataSource();
+    if (ds != null) {
+      ds.setLogWriter(writer);
+    }
+  }
+
+  @Override
+  public boolean isWrapperFor(final Class<?> cls) {
+    return cls != null && cls.isInstance(this);
+  }
+
+  @Override
+  public <T> T unwrap(final Class<T> cls) {
+    return cls.cast(this);
+  }
+
+  @Override
+  public final Connection getConnection() throws SQLException {
+    return this.getConnection(this.getDataSource(), this.getUsername(), this.getPassword());
+  }
+
+  @Override
+  public final Connection getConnection(final String username, final String password) throws SQLException {
+    return this.getConnection(this.getDataSource(), username, password);
   }
 
   public Connection getConnection(final DataSource dataSource) throws SQLException {
+    return this.getConnection(dataSource, this.getUsername(), this.getPassword());
+  }
+
+  public Connection getConnection(final DataSource dataSource, String username, String password) throws SQLException {
     Connection connection = null;
     if (dataSource != null) {
-      final String username = this.getUsername();
       if (username == null) {
         connection = dataSource.getConnection();
       } else {
-        connection = dataSource.getConnection(username, this.getPassword());
+        connection = dataSource.getConnection(username, password);
       }
     }
     return connection;
-  }
-
-  @Override
-  public int hashCode() {
-    assert this.hashCodeString != null;
-    return this.hashCodeString.hashCode();
-  }
-
-  @Override
-  public boolean equals(final Object other) {
-    if (other == this) {
-      return true;
-    } else if (other != null && other.getClass().equals(this.getClass())) {
-      assert this.hashCodeString != null;
-      return this.hashCodeString.equals(((ConnectionDescriptor)other).hashCodeString);
-    } else {
-      return false;
-    }
-  }
-
-  private final void readObject(final ObjectInputStream stream) throws ClassNotFoundException, IOException {
-    if (stream != null) {
-      stream.defaultReadObject();
-      if (this.hashCodeString == null) {
-        this.hashCodeString = String.valueOf(this.getConnectionURL() + this.getCatalog() + this.getSchema() + this.getUsername() + this.getPassword());
-      }
-    }
   }
 
 }

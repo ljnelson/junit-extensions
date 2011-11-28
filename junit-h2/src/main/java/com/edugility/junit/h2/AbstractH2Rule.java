@@ -67,24 +67,6 @@ public abstract class AbstractH2Rule extends AbstractDBRule {
   }
 
   @Override
-  public String getUsername() {
-    String username = super.getUsername();
-    if (username == null) {
-      username = System.getProperty("testDatabaseUserName");
-    }
-    return username;
-  }
-
-  @Override
-  public String getPassword() {
-    String password = super.getPassword();
-    if (password == null) {
-      password = System.getProperty("testDatabasePassword");
-    }
-    return password;
-  }
-
-  @Override
   public void create() throws Exception {
     super.create();
     this.setShutdown(this.initialShutdownValue);

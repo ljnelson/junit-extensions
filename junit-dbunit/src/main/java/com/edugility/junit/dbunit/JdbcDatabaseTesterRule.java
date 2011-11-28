@@ -50,13 +50,40 @@ import org.junit.runner.Description;
 
 import org.junit.runners.model.Statement;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class JdbcDatabaseTesterRule extends JdbcDatabaseTester implements TestRule {
 
-  public JdbcDatabaseTesterRule(final String driverClassName, final ConnectionDescriptor descriptor, final IDataSet dataSet, final DatabaseOperation setUpOperation, final DatabaseOperation tearDownOperation, final IOperationListener listener) throws Exception {
-    this(driverClassName,
+  private static final Logger logger = LoggerFactory.getLogger(JdbcDatabaseTester.class);
+
+  private DataSetLocator locator;
+
+  public JdbcDatabaseTesterRule(final ConnectionDescriptor descriptor) throws Exception {
+    this(descriptor, null, DatabaseOperation.CLEAN_INSERT, DatabaseOperation.NONE, new DefaultOperationListener());
+  }
+
+  public JdbcDatabaseTesterRule(final ConnectionDescriptor descriptor, final IDataSet dataSet) throws Exception {
+    this(descriptor, dataSet, DatabaseOperation.CLEAN_INSERT, DatabaseOperation.NONE, new DefaultOperationListener());
+  }
+
+  public JdbcDatabaseTesterRule(final ConnectionDescriptor descriptor, final IDataSet dataSet, final DatabaseOperation setUpOperation, final DatabaseOperation tearDownOperation) throws Exception {
+    this("java.lang.Object",
+         descriptor == null ? null : descriptor.getConnectionURL(),
+         descriptor == null ? null : descriptor.getUsername(),
+         descriptor == null ? null : descriptor.getPassword(),
+         descriptor == null ? null : descriptor.getSchema(),
+         dataSet,
+         setUpOperation,
+         tearDownOperation,
+         new DefaultOperationListener());
+  }
+
+  public JdbcDatabaseTesterRule(final ConnectionDescriptor descriptor, final IDataSet dataSet, final DatabaseOperation setUpOperation, final DatabaseOperation tearDownOperation, final IOperationListener listener) throws Exception {
+    this("java.lang.Object",
          descriptor == null ? null : descriptor.getConnectionURL(),
          descriptor == null ? null : descriptor.getUsername(),
          descriptor == null ? null : descriptor.getPassword(),
@@ -67,14 +94,26 @@ public class JdbcDatabaseTesterRule extends JdbcDatabaseTester implements TestRu
          listener);
   }
 
+  public JdbcDatabaseTesterRule(final String connectionURL, final String username, final String password, final String schema) throws Exception {
+    this("java.lang.Object", connectionURL, username, password, schema, null, DatabaseOperation.CLEAN_INSERT, DatabaseOperation.NONE, new DefaultOperationListener());
+  }
+
+  public JdbcDatabaseTesterRule(final String connectionURL, final String username, final String password, final String schema, final IDataSet dataSet) throws Exception {
+    this("java.lang.Object", connectionURL, username, password, schema, dataSet, DatabaseOperation.CLEAN_INSERT, DatabaseOperation.NONE, new DefaultOperationListener());
+  }
+
+  public JdbcDatabaseTesterRule(final String connectionURL, final String username, final String password, final String schema, IDataSet dataSet, final DatabaseOperation setUpOperation, final DatabaseOperation tearDownOperation) throws Exception {
+    this("java.lang.Object", connectionURL, username, password, schema, dataSet, setUpOperation, tearDownOperation, new DefaultOperationListener());
+  }
+
+  public JdbcDatabaseTesterRule(final String connectionURL, final String username, final String password, final String schema, IDataSet dataSet, final DatabaseOperation setUpOperation, final DatabaseOperation tearDownOperation, final IOperationListener listener) throws Exception {
+    this("java.lang.Object", connectionURL, username, password, schema, dataSet, setUpOperation, tearDownOperation, listener);
+  }
+
   public JdbcDatabaseTesterRule(final String driverClassName, final String connectionURL, final String username, final String password, final String schema, IDataSet dataSet, final DatabaseOperation setUpOperation, final DatabaseOperation tearDownOperation, final IOperationListener listener) throws Exception {
     super(driverClassName, connectionURL, username, password, schema);
-    if (dataSet == null) {
-      dataSet = this.findDataSet();
-    }
-    if (dataSet == null) {
-      this.setDataSet(new DefaultDataSet());
-    } else {
+    logger.info("Entering root constructor");
+    if (dataSet != null) {
       this.setDataSet(dataSet);
     }
     if (setUpOperation == null) {
@@ -94,13 +133,16 @@ public class JdbcDatabaseTesterRule extends JdbcDatabaseTester implements TestRu
     }
   }
 
-  protected IDataSet findDataSet() throws Exception {
-    final String classpathResourceName = String.format("/datasets/%s.xml", this.getClass().getSimpleName());
-    final URL dataSetUrl = this.getClass().getResource(classpathResourceName);
-    if (dataSetUrl != null) {
-      return new FlatXmlDataSetBuilder().build(dataSetUrl);
+  public DataSetLocator getDataSetLocator() {
+    return this.locator;
+  }
+
+  protected IDataSet findDataSet(final Description description) throws Exception {
+    DataSetLocator locator = this.getDataSetLocator();
+    if (locator == null) {
+      locator = new DataSetLocator();
     }
-    return new DefaultDataSet();
+    return locator.findDataSet(description);
   }
 
   @Override
@@ -112,6 +154,10 @@ public class JdbcDatabaseTesterRule extends JdbcDatabaseTester implements TestRu
       returnValue = new Statement() {
           @Override
           public final void evaluate() throws Throwable {
+            final boolean dataSetWasNull = getDataSet() == null;
+            if (dataSetWasNull) {
+              setDataSet(findDataSet(description));
+            }
             onSetup();
             final ThrowableChain chain = new ThrowableChain();
             try {
@@ -125,6 +171,9 @@ public class JdbcDatabaseTesterRule extends JdbcDatabaseTester implements TestRu
                 onTearDown();
               } catch (final Throwable boom) {
                 chain.add(boom);
+              }
+              if (dataSetWasNull) {
+                setDataSet(null);
               }
               if (chain.size() > 1) {
                 throw chain;

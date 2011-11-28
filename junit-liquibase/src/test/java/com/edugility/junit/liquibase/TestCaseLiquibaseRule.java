@@ -29,15 +29,11 @@
  */
 package com.edugility.junit.liquibase;
 
-import java.io.InputStream;
-
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import java.util.logging.LogManager;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -50,13 +46,8 @@ import static org.junit.Assert.assertTrue;
 public class TestCaseLiquibaseRule {
 
   static {
-    final LogManager logManager = LogManager.getLogManager();
-    assertNotNull(logManager);
     try {
-      final InputStream loggingProperties = TestCaseLiquibaseRule.class.getResourceAsStream("/logging.properties");
-      assertNotNull(loggingProperties);
-      logManager.readConfiguration(loggingProperties);
-      loggingProperties.close();
+      CustomLoggingPropertiesLoader.loadLoggingProperties();
     } catch (final Exception everything) {
       everything.printStackTrace(System.err);
     }

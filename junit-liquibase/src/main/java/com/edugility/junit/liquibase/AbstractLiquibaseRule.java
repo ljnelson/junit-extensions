@@ -46,6 +46,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.LogRecord;
 
+import com.edugility.junit.db.ConnectionDescriptor;
+
 import liquibase.Liquibase;
 
 import liquibase.database.jvm.JdbcConnection;
@@ -82,6 +84,14 @@ public abstract class AbstractLiquibaseRule implements TestRule {
   private String[] contexts;
 
   private String changeLogResourceName;
+
+  public AbstractLiquibaseRule(final ConnectionDescriptor cd, final String changeLogResourceName, final String... changeLogContexts) {
+    this(cd == null ? null : cd.getUsername(),
+         cd == null ? null : cd.getPassword(),
+         cd == null ? null : cd.getSchema(),
+         changeLogResourceName,
+         changeLogContexts);
+  }
 
   public AbstractLiquibaseRule(final String username, final String password, final String schema, final String changeLogResourceName, final String... changeLogContexts) {
     super();

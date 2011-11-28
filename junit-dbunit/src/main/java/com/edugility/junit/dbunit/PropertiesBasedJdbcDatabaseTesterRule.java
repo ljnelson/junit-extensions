@@ -61,6 +61,10 @@ public class PropertiesBasedJdbcDatabaseTesterRule extends PropertiesBasedJdbcDa
     this(dataSet, DatabaseOperation.CLEAN_INSERT, DatabaseOperation.NONE, new DefaultOperationListener());
   }
 
+  public PropertiesBasedJdbcDatabaseTesterRule(IDataSet dataSet, final DatabaseOperation setUpOperation, final DatabaseOperation tearDownOperation) throws Exception {
+    this(dataSet, setUpOperation, tearDownOperation, new DefaultOperationListener());
+  }
+
   public PropertiesBasedJdbcDatabaseTesterRule(IDataSet dataSet, final DatabaseOperation setUpOperation, final DatabaseOperation tearDownOperation, final IOperationListener listener) throws Exception {
     super();
     if (dataSet == null) {

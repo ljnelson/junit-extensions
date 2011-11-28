@@ -29,7 +29,14 @@
  */
 package com.edugility.junit.liquibase;
 
+import com.edugility.junit.db.ConnectionDescriptor;
+
 import com.edugility.junit.dbunit.JdbcDatabaseTesterRule;
+
+import org.dbunit.IDatabaseTester;
+
+import org.dbunit.dataset.IDataSet;
+import org.dbunit.dataset.ITable;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -44,16 +51,33 @@ import static org.junit.Assert.assertTrue;
 
 public class TestCaseIntegration {
 
+  static {
+    try {
+      CustomLoggingPropertiesLoader.loadLoggingProperties();
+    } catch (final Exception everything) {
+      everything.printStackTrace(System.err);
+    }
+  }
+
   @Rule
-  public final TestRule rule = RuleChain.outerRule(new DataSourceLiquibaseRule("jdbc:h2:mem:test;INIT=CREATE SCHEMA IF NOT EXISTS test;DB_CLOSE_DELAY=-1", "sa", "", "test", "changelog.xml")).around(new JdbcDatabaseTesterRule(org.h2.Driver.class.getName(), "jdbc:h2:mem:test;INIT=CREATE SCHEMA IF NOT EXISTS test;DB_CLOSE_DELAY=-1", "sa", "", "test", null, null, null, null));
+  public final TestRule rule;
+
+  public final JdbcDatabaseTesterRule tester;
 
   public TestCaseIntegration() throws Exception {
     super();
+    final ConnectionDescriptor cd = new ConnectionDescriptor("jdbc:h2:mem:test;INIT=CREATE SCHEMA IF NOT EXISTS test;DB_CLOSE_DELAY=-1", "test", "test", "sa", "");
+    this.tester = new JdbcDatabaseTesterRule(cd);
+    this.rule = RuleChain.outerRule(new DataSourceLiquibaseRule(cd)).around(this.tester);
   }
 
   @Test
   public void testIntegration() throws Exception {
-
+    final IDataSet dataSet = this.tester.getDataSet();
+    assertNotNull(dataSet);
+    final ITable rockTable = dataSet.getTable("rock");
+    assertNotNull(rockTable);
+    assertEquals(2, rockTable.getRowCount());
   }
   
 }
