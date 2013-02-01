@@ -83,8 +83,8 @@ public class DataSetLocator implements Serializable {
         dataSetUrl = this.getClass().getResource(classpathResourceName);
       }
     }
-    if (logger.isInfoEnabled()) {
-      logger.info("IDataSet URL: {} (from {})", dataSetUrl, classpathResourceName);
+    if (logger.isDebugEnabled()) {
+      logger.debug("IDataSet URL: {} (from {})", dataSetUrl, classpathResourceName);
     }
 
     final IDataSet returnValue = this.buildDataSet(dataSetUrl);
