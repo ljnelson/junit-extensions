@@ -56,7 +56,7 @@ public class ConnectionDescriptor extends Properties implements DataSource, Seri
   private static final long serialVersionUID = 1L;
 
   public ConnectionDescriptor(final String connectionURL, final String catalog, final String schema, final String username, final String password) {
-    super();
+    super(System.getProperties());
     this.setProperty(CONNECTION_URL, connectionURL);
     this.setProperty(CATALOG, catalog);
     this.setProperty(SCHEMA, schema);

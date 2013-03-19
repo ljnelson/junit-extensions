@@ -62,11 +62,8 @@ import static org.junit.Assert.assertTrue;
  * and is designed so that no failure in any phase will prohibit
  * effective cleanup.</p>
  *
- * @author <a href="mailto:ljnelson@gmail.com">Laird Nelson</a>
- *
- * @version 1.0
- *
- * @since 1.0
+ * @author <a href="http://about.me/lairdnelson"
+ * target="_parent">Laird Nelson</a>
  *
  * @see TestRule
  *
@@ -168,9 +165,9 @@ public abstract class AbstractDBRule implements TestRule {
     }
     if (descriptor != null) {
       this.setCatalog(descriptor.getCatalog());
-      this.setSchema(schema);
-      this.setUsername(username);
-      this.setPassword(password);
+      this.setSchema(descriptor.getSchema());
+      this.setUsername(descriptor.getUsername());
+      this.setPassword(descriptor.getPassword());
     }
   }
 
@@ -402,7 +399,8 @@ public abstract class AbstractDBRule implements TestRule {
    * @param base the {@link Statement} to wrap; if {@code null},
    * {@code null} is returned
    *
-   * @param description currently ignored by this implementation
+   * @param description a {@link Description} that is ignored by this
+   * implementation
    */
   @Override
   public Statement apply(final Statement base, final Description description) {
@@ -417,11 +415,15 @@ public abstract class AbstractDBRule implements TestRule {
             try {
               create();
               fireDatabaseCreated();
+
               connect();
               fireDatabaseConnected();
+
               initialize();
               fireDatabaseInitialized();
+
               base.evaluate();
+
             } catch (final ThrowableChain throwMeButRealisticallyNeverThrown) {
               throw throwMeButRealisticallyNeverThrown;
             } catch (final Throwable everyLastLittleThing) {
@@ -472,20 +474,26 @@ public abstract class AbstractDBRule implements TestRule {
       chain = new ThrowableChain();
     }
     try {
+
       this.reset();
       this.fireDatabaseReset();
+
     } catch (final Throwable boom) {
       chain.add(boom);
     } finally {
       try {
+
         this.disconnect();
         this.fireDatabaseDisconnected();
+
       } catch (final Throwable boom) {
         chain.add(boom);
       } finally {
         try {
+
           this.destroy();
           this.fireDatabaseDestroyed();
+
         } catch (final Throwable boom) {
           chain.add(boom);
         } finally {
@@ -657,11 +665,8 @@ public abstract class AbstractDBRule implements TestRule {
    * An {@link EventObject} sent to {@link Listener}s representing
    * events in an {@link AbstractDBRule}'s lifecycle.
    *
-   * @author <a href="mailto:ljnelson@gmail.com">Laird Nelson</a>
-   *
-   * @version 1.0
-   *
-   * @since 1.0
+   * @author <a href="http://about.me/lairdnelson"
+   * target="_parent">Laird Nelson</a>
    */
   public static class Event extends EventObject {
 
@@ -697,11 +702,8 @@ public abstract class AbstractDBRule implements TestRule {
    * An {@link EventListener} that contractually describes moments in
    * an {@link AbstractDBRule}'s lifecycle.
    *
-   * @author <a href="mailto:ljnelson@gmail.com">Laird Nelson</a>
-   *
-   * @version 1.0
-   *
-   * @since 1.0
+   * @author <a href="http://about.me/lairdnelson"
+   * target="_parent">Laird Nelson</a>
    */
   public static interface Listener extends EventListener {
 
@@ -760,11 +762,8 @@ public abstract class AbstractDBRule implements TestRule {
    * nothing.  This class is provided as a convenience for
    * subclassers.
    *
-   * @author <a href="mailto:ljnelson@gmail.com">Laird Nelson</a>
-   *
-   * @version 1.0
-   *
-   * @since 1.0
+   * @author <a href="http://about.me/lairdnelson"
+   * target="_parent">Laird Nelson</a>
    */
   public static class AbstractListener implements Listener {
 

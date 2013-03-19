@@ -40,11 +40,8 @@ import javax.sql.DataSource;
  * javax.sql.DataSource} interface in terms of {@link DriverManager}
  * operations.
  *
- * @author <a href="mailto:ljnelson@gmail.com">Laird Nelson</a>
- *
- * @version 1.0
- *
- * @since 1.0
+ * @author <a href="http://about.me/lairdnelson"
+ * target="_parent">Laird Nelson</a>
  */
 public final class DriverManagerDataSource implements DataSource {
     

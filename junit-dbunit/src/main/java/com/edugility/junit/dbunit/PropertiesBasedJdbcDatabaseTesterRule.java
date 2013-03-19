@@ -27,34 +27,18 @@
  */
 package com.edugility.junit.dbunit;
 
-import java.net.URL;
-
-import com.edugility.throwables.ThrowableChain;
-
 import org.dbunit.DefaultOperationListener;
 import org.dbunit.IOperationListener;
 import org.dbunit.PropertiesBasedJdbcDatabaseTester;
 
-import org.dbunit.dataset.DefaultDataSet;
 import org.dbunit.dataset.IDataSet;
-
-import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
 
 import org.dbunit.operation.DatabaseOperation;
 
-import org.junit.rules.TestRule;
-
-import org.junit.runner.Description;
-
-import org.junit.runners.model.Statement;
-
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-public class PropertiesBasedJdbcDatabaseTesterRule extends PropertiesBasedJdbcDatabaseTester implements TestRule {
+public class PropertiesBasedJdbcDatabaseTesterRule extends JdbcDatabaseTesterRule {
 
   public PropertiesBasedJdbcDatabaseTesterRule() throws Exception {
-    this(null);
+    this(null, DatabaseOperation.CLEAN_INSERT, DatabaseOperation.NONE, new DefaultOperationListener());
   }
 
   public PropertiesBasedJdbcDatabaseTesterRule(final IDataSet dataSet) throws Exception {
@@ -66,72 +50,14 @@ public class PropertiesBasedJdbcDatabaseTesterRule extends PropertiesBasedJdbcDa
   }
 
   public PropertiesBasedJdbcDatabaseTesterRule(IDataSet dataSet, final DatabaseOperation setUpOperation, final DatabaseOperation tearDownOperation, final IOperationListener listener) throws Exception {
-    super();
-    if (dataSet == null) {
-      dataSet = this.findDataSet();
-    }
-    if (dataSet == null) {
-      this.setDataSet(new DefaultDataSet());
-    } else {
-      this.setDataSet(dataSet);
-    }
-    if (setUpOperation == null) {
-      this.setSetUpOperation(DatabaseOperation.CLEAN_INSERT);
-    } else {
-      this.setSetUpOperation(setUpOperation);
-    }
-    if (tearDownOperation == null) {
-      this.setTearDownOperation(DatabaseOperation.NONE);
-    } else {
-      this.setTearDownOperation(tearDownOperation);
-    }
-    if (listener == null) {
-      this.setOperationListener(new DefaultOperationListener());
-    } else {
-      this.setOperationListener(listener);
-    }
-  }
-
-  protected IDataSet findDataSet() throws Exception {
-    final String classpathResourceName = String.format("/datasets/%s.xml", this.getClass().getSimpleName());
-    final URL dataSetUrl = this.getClass().getResource(classpathResourceName);
-    if (dataSetUrl != null) {
-      return new FlatXmlDataSetBuilder().build(dataSetUrl);
-    }
-    return new DefaultDataSet();
-  }
-
-  @Override
-  public Statement apply(final Statement base, final Description description) {
-    final Statement returnValue;
-    if (base == null) {
-      returnValue = null;
-    } else {
-      returnValue = new Statement() {
-          @Override
-          public final void evaluate() throws Throwable {
-            onSetup();
-            final ThrowableChain chain = new ThrowableChain();
-            try {
-              base.evaluate();
-            } catch (final ThrowableChain notThrown) {
-              throw notThrown;
-            } catch (final Throwable everythingElse) {
-              chain.add(everythingElse);
-            } finally {
-              try {
-                onTearDown();
-              } catch (final Throwable boom) {
-                chain.add(boom);
-              }
-              if (chain.size() > 1) {
-                throw chain;
-              }
-            }
-          }
-        };
-    }
-    return returnValue;
+    super(System.getProperty(PropertiesBasedJdbcDatabaseTester.DBUNIT_CONNECTION_URL),
+          System.getProperty(PropertiesBasedJdbcDatabaseTester.DBUNIT_USERNAME),
+          System.getProperty(PropertiesBasedJdbcDatabaseTester.DBUNIT_PASSWORD),
+          System.getProperty(PropertiesBasedJdbcDatabaseTester.DBUNIT_SCHEMA),
+          dataSet,
+          setUpOperation,
+          tearDownOperation,
+          listener);
   }
 
 }

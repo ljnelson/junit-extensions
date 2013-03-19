@@ -1,6 +1,6 @@
-/* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil -*-
+/* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright (c) 2011-2011 Edugility LLC.
+ * Copyright (c) 2011-2013 Edugility LLC.
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -46,14 +46,31 @@ public class DataSetLocator implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  private static final Logger logger = LoggerFactory.getLogger(DataSetLocator.class);
+  private final String classTemplate;
+
+  private final String methodTemplate;
 
   public DataSetLocator() {
+    this("/datasets/%s.xml", "/datasets/%s/%s.xml");
+  }
+
+  public DataSetLocator(final String classTemplate) {
+    this(classTemplate, "/datasets/%s/%s.xml");
+  }
+
+  public DataSetLocator(final String classTemplate, final String methodTemplate) {
     super();
+    if (classTemplate == null) {
+      this.classTemplate = "/datasets/%s.xml";
+    } else {
+      this.classTemplate = classTemplate;
+    }
+    this.methodTemplate = methodTemplate;
   }
 
   public IDataSet findDataSet(final Description description) throws DataSetException {
-    if (logger.isDebugEnabled()) {
+    final Logger logger = LoggerFactory.getLogger(DataSetLocator.class);
+    if (logger != null && logger.isDebugEnabled()) {
       logger.debug("findDataSet() - start"); // we follow the dubious formatting and level choices of DBUnit here
     }
     if (description == null) {
@@ -72,18 +89,18 @@ public class DataSetLocator implements Serializable {
     String classpathResourceName = null;
     URL dataSetUrl = null;
     final String methodName = description.getMethodName();
-    if (methodName == null) {
-      classpathResourceName = String.format("/datasets/%s.xml", classname);
+    if (methodName == null || this.methodTemplate == null) {
+      classpathResourceName = String.format(this.classTemplate, classname);
       dataSetUrl = this.getClass().getResource(classpathResourceName);
     } else {
-      classpathResourceName = String.format("/datasets/%s/%s.xml", classname, methodName);
+      classpathResourceName = String.format(this.methodTemplate, classname, methodName);
       dataSetUrl = this.getClass().getResource(classpathResourceName);
       if (dataSetUrl == null) {
-        classpathResourceName = String.format("/datasets/%s.xml", classname);
+        classpathResourceName = String.format(this.classTemplate, classname);
         dataSetUrl = this.getClass().getResource(classpathResourceName);
       }
     }
-    if (logger.isDebugEnabled()) {
+    if (logger != null && logger.isDebugEnabled()) {
       logger.debug("IDataSet URL: {} (from {})", dataSetUrl, classpathResourceName);
     }
 

@@ -1,4 +1,4 @@
-/* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil -*-
+/* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
  * Copyright (c) 2011-2011 Edugility LLC.
  *
@@ -37,10 +37,7 @@ import org.dbunit.DefaultOperationListener;
 import org.dbunit.IOperationListener;
 import org.dbunit.JdbcDatabaseTester;
 
-import org.dbunit.dataset.DefaultDataSet;
 import org.dbunit.dataset.IDataSet;
-
-import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
 
 import org.dbunit.operation.DatabaseOperation;
 
@@ -50,15 +47,9 @@ import org.junit.runner.Description;
 
 import org.junit.runners.model.Statement;
 
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 public class JdbcDatabaseTesterRule extends JdbcDatabaseTester implements TestRule {
-
-  private static final Logger logger = LoggerFactory.getLogger(JdbcDatabaseTester.class);
 
   private DataSetLocator locator;
 
@@ -112,7 +103,7 @@ public class JdbcDatabaseTesterRule extends JdbcDatabaseTester implements TestRu
 
   public JdbcDatabaseTesterRule(final String driverClassName, final String connectionURL, final String username, final String password, final String schema, IDataSet dataSet, final DatabaseOperation setUpOperation, final DatabaseOperation tearDownOperation, final IOperationListener listener) throws Exception {
     super(driverClassName, connectionURL, username, password, schema);
-    logger.info("Entering root constructor");
+    LoggerFactory.getLogger(JdbcDatabaseTester.class).info("Entering root constructor");
     if (dataSet != null) {
       this.setDataSet(dataSet);
     }
@@ -137,7 +128,11 @@ public class JdbcDatabaseTesterRule extends JdbcDatabaseTester implements TestRu
     return this.locator;
   }
 
-  protected IDataSet findDataSet(final Description description) throws Exception {
+  public void setDataSetLocator(final DataSetLocator locator) {
+    this.locator = locator;
+  }
+
+  public IDataSet findDataSet(final Description description) throws Exception {
     DataSetLocator locator = this.getDataSetLocator();
     if (locator == null) {
       locator = new DataSetLocator();
@@ -154,11 +149,19 @@ public class JdbcDatabaseTesterRule extends JdbcDatabaseTester implements TestRu
       returnValue = new Statement() {
           @Override
           public final void evaluate() throws Throwable {
+
+            // Ensure there is an IDataSet present.
             final boolean dataSetWasNull = getDataSet() == null;
             if (dataSetWasNull) {
               setDataSet(findDataSet(description));
             }
+
+            // Run dbUnit's preparatory phase, represented by
+            // JdbcDatabaseTester#onSetup().
             onSetup();
+
+            // Attempt to run the regular JUnit test, wrapped up
+            // safely in such a way that ALL errors are caught.
             final ThrowableChain chain = new ThrowableChain();
             try {
               base.evaluate();
@@ -168,13 +171,22 @@ public class JdbcDatabaseTesterRule extends JdbcDatabaseTester implements TestRu
               chain.add(everythingElse);
             } finally {
               try {
+
+                // Run dbUnit's cleanup phase, represented by
+                // JdbcDatabaseTester#onTearDown().
                 onTearDown();
+
               } catch (final Throwable boom) {
                 chain.add(boom);
               }
+
+              // We might have used an auto-discovered IDataSet
+              // appropriate for this test only.  Make sure we leave
+              // things as we found them.
               if (dataSetWasNull) {
                 setDataSet(null);
               }
+
               if (chain.size() > 1) {
                 throw chain;
               }
