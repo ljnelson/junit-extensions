@@ -31,7 +31,7 @@ package com.edugility.junit.liquibase;
 
 import com.edugility.junit.db.ConnectionDescriptor;
 
-import com.edugility.junit.dbunit.JdbcDatabaseTesterRule;
+import com.edugility.junit.dbunit.DatabaseTesterRule;
 
 import org.dbunit.IDatabaseTester;
 
@@ -62,12 +62,12 @@ public class TestCaseIntegration {
   @Rule
   public final TestRule rule;
 
-  public final JdbcDatabaseTesterRule tester;
+  public final DatabaseTesterRule tester;
 
   public TestCaseIntegration() throws Exception {
     super();
     final ConnectionDescriptor cd = new ConnectionDescriptor("jdbc:h2:mem:test;INIT=CREATE SCHEMA IF NOT EXISTS test;DB_CLOSE_DELAY=-1", "test", "test", "sa", "");
-    this.tester = new JdbcDatabaseTesterRule(cd);
+    this.tester = new DatabaseTesterRule(cd);
     this.rule = RuleChain.outerRule(new DataSourceLiquibaseRule(cd)).around(this.tester);
   }
 

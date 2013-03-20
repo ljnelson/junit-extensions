@@ -131,7 +131,6 @@
     <module>junit-db</module>
     <module>junit-h2</module>
     <module>junit-dbunit</module>
-    <module>junit-dbunit-h2</module>
     <module>junit-liquibase</module>
   </modules>
 

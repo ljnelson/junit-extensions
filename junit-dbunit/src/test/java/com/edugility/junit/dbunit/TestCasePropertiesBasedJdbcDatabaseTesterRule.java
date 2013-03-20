@@ -42,11 +42,11 @@ import static org.junit.Assert.assertNotNull;
 public class TestCasePropertiesBasedJdbcDatabaseTesterRule {
 
   @Rule
-  public final PropertiesBasedJdbcDatabaseTesterRule rule;
+  public final DatabaseTesterRule rule;
   
   public TestCasePropertiesBasedJdbcDatabaseTesterRule() throws Exception {
     super();    
-    this.rule = new PropertiesBasedJdbcDatabaseTesterRule();
+    this.rule = new DatabaseTesterRule();
   }
 
   @Test

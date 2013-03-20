@@ -65,13 +65,18 @@ import static org.junit.Assert.assertTrue;
  * @author <a href="http://about.me/lairdnelson"
  * target="_parent">Laird Nelson</a>
  *
+ * @see DBRule
+ *
  * @see TestRule
  *
  * @see RuleChain
  *
  * @see <a href="http://github.com/ljnelson/edugility-throwables">the
  * <tt>edugility-throwables</tt> project on Github</a>
+ *
+ * @deprecated See {@link DBRule}.
  */
+@Deprecated
 public abstract class AbstractDBRule implements TestRule {
 
   /**
@@ -424,8 +429,6 @@ public abstract class AbstractDBRule implements TestRule {
 
               base.evaluate();
 
-            } catch (final ThrowableChain throwMeButRealisticallyNeverThrown) {
-              throw throwMeButRealisticallyNeverThrown;
             } catch (final Throwable everyLastLittleThing) {
               chain.add(everyLastLittleThing);
             } finally {

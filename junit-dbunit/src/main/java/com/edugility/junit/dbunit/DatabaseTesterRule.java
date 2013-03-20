@@ -27,16 +27,23 @@
  */
 package com.edugility.junit.dbunit;
 
+import java.sql.Connection;
+
 import java.util.Properties;
+
+import com.edugility.junit.db.ConnectionDescriptor;
+import com.edugility.junit.db.DBRule;
 
 import com.edugility.throwables.ThrowableChain;
 
+import org.dbunit.AbstractDatabaseTester;
 import org.dbunit.IDatabaseTester;
 import org.dbunit.IOperationListener;
 import org.dbunit.JdbcDatabaseTester;
 import org.dbunit.JndiDatabaseTester;
 import org.dbunit.PropertiesBasedJdbcDatabaseTester;
 
+import org.dbunit.database.DatabaseConnection;
 import org.dbunit.database.IDatabaseConnection;
 
 import org.dbunit.dataset.IDataSet;
@@ -49,9 +56,11 @@ import org.junit.runner.Description;
 
 import org.junit.runners.model.Statement;
 
-public class DatabaseTesterRule implements IDatabaseTester, TestRule {
+public class DatabaseTesterRule extends DBRule implements IDatabaseTester {
 
   public final IDatabaseTester delegate;
+
+  private transient boolean dataSetWasNull;
 
   private DataSetLocator locator;
 
@@ -78,8 +87,30 @@ public class DatabaseTesterRule implements IDatabaseTester, TestRule {
     this(new JndiDatabaseTester(environment, lookupName, schema));
   }
 
+  public DatabaseTesterRule(final String connectionUrl, final String username, final String password) throws Exception {
+    this(new JdbcDatabaseTester("java.lang.Object", connectionUrl, username, password));
+  }
+
   public DatabaseTesterRule(final String connectionUrl, final String username, final String password, final String schema) throws Exception {
     this(new JdbcDatabaseTester("java.lang.Object", connectionUrl, username, password, schema));
+  }
+
+  public DatabaseTesterRule(final ConnectionDescriptor cd) throws Exception {
+    super(cd);
+    if (cd == null) {
+      this.delegate = new PropertiesBasedJdbcDatabaseTester();
+    } else {
+      this.delegate = new AbstractDatabaseTester() {
+          @Override
+          public final IDatabaseConnection getConnection() throws Exception {
+            final Connection connection = cd.getConnection();
+            if (connection == null) {
+              throw new IllegalStateException("cd.getConnection() == null");
+            }
+            return new DatabaseConnection(connection, cd.getSchema());
+          }
+        };
+    }
   }
 
   public DatabaseTesterRule(final IDatabaseTester delegate) {
@@ -98,17 +129,17 @@ public class DatabaseTesterRule implements IDatabaseTester, TestRule {
     this.locator = locator;
   }
 
-  public IDataSet findDataSet(final Description description) throws Exception {
+  public IDataSet findDataSet() throws Exception {
     DataSetLocator locator = this.getDataSetLocator();
     if (locator == null) {
       locator = new DataSetLocator();
     }
-    return locator.findDataSet(description);
+    return locator.findDataSet(this.getDescription());
   }
 
   @Deprecated
   @Override
-  public void closeConnection(final IDatabaseConnection connection) throws Exception {
+  public final void closeConnection(final IDatabaseConnection connection) throws Exception {
     this.delegate.closeConnection(connection);
   }
 
@@ -123,96 +154,70 @@ public class DatabaseTesterRule implements IDatabaseTester, TestRule {
   }
 
   @Override
-  public void setDataSet(final IDataSet dataSet) {
+  public final void setDataSet(final IDataSet dataSet) {
     this.delegate.setDataSet(dataSet);
   }
 
   @Deprecated
   @Override
-  public void setSchema(final String schema) {
+  public final void setSchema(final String schema) {
     this.delegate.setSchema(schema);
   }
 
   @Override
-  public void setSetUpOperation(final DatabaseOperation setUpOperation) {
+  public final void setSetUpOperation(final DatabaseOperation setUpOperation) {
     this.delegate.setSetUpOperation(setUpOperation);
   }
 
   @Override
-  public void setTearDownOperation(final DatabaseOperation tearDownOperation) {
+  public final void setTearDownOperation(final DatabaseOperation tearDownOperation) {
     this.delegate.setTearDownOperation(tearDownOperation);
   }
 
   @Override
-  public void onSetup() throws Exception {
+  public void connect() throws Exception {
+    final Connection returnValue;
+    final IDatabaseConnection c = this.getConnection();
+    if (c == null) {
+      returnValue = null;
+    } else {
+      returnValue = c.getConnection();
+    }
+    
+  }
+  
+  @Override
+  public void initialize() throws Exception {
+    super.initialize();
+    this.dataSetWasNull = this.getDataSet() == null;
+    if (this.dataSetWasNull) {
+      this.setDataSet(this.findDataSet());
+    }
+    this.onSetup();
+  }
+
+  @Override
+  public final void onSetup() throws Exception {
     this.delegate.onSetup();
   }
 
   @Override
-  public void onTearDown() throws Exception {
+  public void reset() throws Exception {
+    this.onTearDown();
+    if (this.dataSetWasNull) {
+      this.setDataSet(null);
+    }
+    super.reset();
+  }
+
+  @Override
+  public final void onTearDown() throws Exception {
     this.delegate.onTearDown();
   }
 
   @Override
-  public void setOperationListener(final IOperationListener listener) {
+  public final void setOperationListener(final IOperationListener listener) {
     this.delegate.setOperationListener(listener);
-  }
-
-  @Override
-  public Statement apply(final Statement base, final Description description) {
-    final Statement returnValue;
-    if (base == null) {
-      returnValue = null;
-    } else {
-      returnValue = new Statement() {
-          @Override
-          public final void evaluate() throws Throwable {
-
-            // Ensure there is an IDataSet present.
-            final boolean dataSetWasNull = getDataSet() == null;
-            if (dataSetWasNull) {
-              setDataSet(findDataSet(description));
-            }
-
-            // Run dbUnit's preparatory phase, represented by
-            // DatabaseTester#onSetup().
-            onSetup();
-
-            // Attempt to run the regular JUnit test, wrapped up
-            // safely in such a way that ALL errors are caught.
-            final ThrowableChain chain = new ThrowableChain();
-            try {
-              base.evaluate();
-            } catch (final ThrowableChain notThrown) {
-              throw notThrown;
-            } catch (final Throwable everythingElse) {
-              chain.add(everythingElse);
-            } finally {
-              try {
-
-                // Run dbUnit's cleanup phase, represented by
-                // DatabaseTester#onTearDown().
-                onTearDown();
-
-              } catch (final Throwable boom) {
-                chain.add(boom);
-              }
-
-              // We might have used an auto-discovered IDataSet
-              // appropriate for this test only.  Make sure we leave
-              // things as we found them.
-              if (dataSetWasNull) {
-                setDataSet(null);
-              }
-
-              if (chain.size() > 1) {
-                throw chain;
-              }
-            }
-          }
-        };
-    }
-    return returnValue;
   }
 
 }

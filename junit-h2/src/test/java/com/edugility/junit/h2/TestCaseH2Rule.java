@@ -40,11 +40,11 @@ import static org.junit.Assert.assertTrue;
 public class TestCaseH2Rule {
 
   @Rule
-  public final AbstractH2Rule rule = new DriverManagerH2Rule("test", "test", "sa", "", true);
+  public final H2Rule rule = new H2Rule("test", "test", "sa", "", true);
 
   @Test
   public void testGetConnectionReturnsNonNullConnection() throws Exception {
-    final Connection connection = this.rule.getConnection();
+    final Connection connection = this.rule.getAllocatedConnection();
     assertNotNull(connection);
   }
 

@@ -51,6 +51,7 @@ public class TestCaseAbstractDBRule {
    *
    * @exception Throwable if an error occurs
    */
+  @Deprecated
   @Test
   public void testExceptionHandling() throws Throwable {
 

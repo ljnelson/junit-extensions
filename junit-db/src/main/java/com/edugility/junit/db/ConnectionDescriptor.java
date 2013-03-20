@@ -35,6 +35,10 @@ import java.sql.SQLException;
 
 import java.util.Properties;
 
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+
 import javax.sql.DataSource;
 
 public class ConnectionDescriptor extends Properties implements DataSource, Serializable {
@@ -55,13 +59,90 @@ public class ConnectionDescriptor extends Properties implements DataSource, Seri
 
   private static final long serialVersionUID = 1L;
 
-  public ConnectionDescriptor(final String connectionURL, final String catalog, final String schema, final String username, final String password) {
+  public ConnectionDescriptor() {
     super(System.getProperties());
-    this.setProperty(CONNECTION_URL, connectionURL);
-    this.setProperty(CATALOG, catalog);
-    this.setProperty(SCHEMA, schema);
-    this.setProperty(USERNAME, username);
-    this.setProperty(PASSWORD, password);
+  }
+
+  public ConnectionDescriptor(final DataSource dataSource) {
+    this();
+    if (dataSource != null) {
+      this.put(DATA_SOURCE, dataSource);
+    }
+  }
+
+  public ConnectionDescriptor(final String connectionUrlOrLookupString) throws NamingException {
+    this();
+    if (connectionUrlOrLookupString != null) {
+      if (connectionUrlOrLookupString.startsWith("jdbc:")) {
+        this.setProperty(CONNECTION_URL, connectionUrlOrLookupString);
+      } else {
+        final Context context = new InitialContext();
+        try {
+          final Object o = context.lookup(connectionUrlOrLookupString);
+          if (o instanceof DataSource) {
+            this.put(DATA_SOURCE, o);
+          }
+        } finally {
+          context.close();
+        }
+      }
+    }
+  }
+
+  public ConnectionDescriptor(final String connectionURL, final String username, final String password) {
+    this(connectionURL, null, null, username, password);
+  }
+
+  public ConnectionDescriptor(Context context, final String lookupString) throws NamingException {
+    this();
+    if (lookupString != null) {
+      if (context == null) {
+        context = new InitialContext();
+      }
+      try {
+        final Object o = context.lookup(lookupString);
+        if (o instanceof DataSource) {
+          this.put(DATA_SOURCE, o);
+        }
+      } finally {
+        context.close();
+      }
+    }
+  }
+
+  public ConnectionDescriptor(final String connectionURL, final String catalog, final String schema, final String username, final String password) {
+    this();
+    if (connectionURL != null) {
+      this.setProperty(CONNECTION_URL, connectionURL);
+    }
+    if (catalog != null) {
+      this.setProperty(CATALOG, catalog);
+    }
+    if (schema != null) {
+      this.setProperty(SCHEMA, schema);
+    }
+    if (username != null) {
+      this.setProperty(USERNAME, username);
+    }
+    if (password != null) {
+      this.setProperty(PASSWORD, password);
+    }
+  }
+
+  public ConnectionDescriptor(final DataSource dataSource, final String catalog, final String schema, final String username, final String password) {
+    this(dataSource);
+    if (catalog != null) {
+      this.setProperty(CATALOG, catalog);
+    }
+    if (schema != null) {
+      this.setProperty(SCHEMA, schema);
+    }
+    if (username != null) {
+      this.setProperty(USERNAME, username);
+    }
+    if (password != null) {
+      this.setProperty(PASSWORD, password);
+    }    
   }
 
   public final DataSource getDataSource() {
