@@ -57,31 +57,26 @@ public class DBRule implements TestRule {
 
   private static final Map<Class<?>, TestClass> testClasses = Collections.synchronizedMap(new HashMap<Class<?>, TestClass>());
 
-  private transient Connection c;
-
-  private transient final ConnectionDescriptor cd;
-
   private transient TestClass testClass;
 
   private transient Object testInstance;
 
   private transient Description description;
 
-  private transient Collection<DBManager> managers;
+  private transient List<DBManager> managers;
 
   private transient DBManager failedManager;
 
   public DBRule() {
-    this(null);
+    this((Collection<? extends DBManager>)null);
   }
 
-  public DBRule(final ConnectionDescriptor cd) {
-    this(cd, null);
+  public DBRule(final DBManager manager) {
+    this(Collections.singleton(manager));
   }
 
-  public DBRule(final ConnectionDescriptor cd, final Collection<? extends DBManager> managers) {
+  public DBRule(final Collection<? extends DBManager> managers) {
     super();
-    this.cd = cd;
     if (managers != null && !managers.isEmpty()) {
       this.managers = new ArrayList<DBManager>(managers);
     } else {
@@ -101,28 +96,15 @@ public class DBRule implements TestRule {
     return this.description;
   }
 
-  public Connection getAllocatedConnection() {
-    return this.c;
-  }
-
-  public ConnectionDescriptor getConnectionDescriptor() {
-    return this.cd;
-  }
-
-  public String getConnectionURL() {
-    if (this.cd == null) {
-      return null;
-    }
-    return this.cd.getConnectionURL();
-  }
-
   public void create() throws Exception {
     this.failedManager = null;
     if (this.managers != null && !this.managers.isEmpty()) {
       for (final DBManager manager : this.managers) {
         if (manager != null) {
+          manager.setDescription(this.getDescription());
+          manager.setTestInstance(this.getTestInstance());
           try {
-            manager.create(this.cd);
+            manager.create();
           } catch (final Throwable boom) {
             this.failedManager = manager;
             if (boom instanceof Exception) {
@@ -168,7 +150,7 @@ public class DBRule implements TestRule {
       for (final DBManager manager : this.managers) {
         if (manager != null) {
           try {
-            manager.inject(this.testInstance, this.getDescription());
+            manager.inject();
           } catch (final Throwable boom) {
             this.failedManager = manager;
             if (boom instanceof Exception) {
@@ -214,9 +196,6 @@ public class DBRule implements TestRule {
     if (this.failedManager != null) {
       this.failedManager.connectFailed(connectFailed);
     }
-    if (this.c != null) {
-      this.c.close();
-    }
   }
 
   public void initialize() throws Exception {
@@ -248,7 +227,9 @@ public class DBRule implements TestRule {
   public void evaluateSucceeded() throws Exception {
     this.failedManager = null;
     if (this.managers != null && !this.managers.isEmpty()) {
-      for (final DBManager manager : this.managers) {
+      final int size = this.managers.size();
+      for (int i = size - 1; i >= 0; i--) {
+        final DBManager manager = this.managers.get(i);
         if (manager != null) {
           try {
             manager.evaluateSucceeded();
@@ -274,7 +255,9 @@ public class DBRule implements TestRule {
   public void reset() throws Exception {
     this.failedManager = null;
     if (this.managers != null && !this.managers.isEmpty()) {
-      for (final DBManager manager : this.managers) {
+      final int size = this.managers.size();
+      for (int i = size - 1; i >= 0; i--) {
+        final DBManager manager = this.managers.get(i);
         if (manager != null) {
           try {
             manager.reset();
@@ -300,7 +283,9 @@ public class DBRule implements TestRule {
   public void disconnect() throws Exception {
     this.failedManager = null;
     if (this.managers != null && !this.managers.isEmpty()) {
-      for (final DBManager manager : this.managers) {
+      final int size = this.managers.size();
+      for (int i = size - 1; i >= 0; i--) {
+        final DBManager manager = this.managers.get(i);
         if (manager != null) {
           try {
             manager.disconnect();
@@ -315,39 +300,6 @@ public class DBRule implements TestRule {
         }
       }
     }
-    final Connection c = this.getAllocatedConnection();
-    if (c != null) {
-      try {
-        c.close();
-      } catch (final SQLException ignoreOnPurpose) {
-        
-      }
-    }
-    if (this.testInstance != null) {
-      final TestClass testClass = this.getTestClass();
-      assertNotNull(testClass);
-
-      final List<FrameworkField> annotatedFields = testClass.getAnnotatedFields(DBConnection.class);
-      assertNotNull(annotatedFields);
-
-      if (!annotatedFields.isEmpty()) {
-        for (final FrameworkField ff : annotatedFields) {
-          if (ff != null) {
-            final Field f = ff.getField();
-            if (f != null && Connection.class.isAssignableFrom(f.getType())) {
-              final boolean accessible = f.isAccessible();
-              try {
-                f.setAccessible(true);
-                f.set(this.testInstance, null);
-              } finally {
-                f.setAccessible(accessible);
-              }
-            }
-          }
-        }
-      }
-    }
-
   }
 
   public void disconnectFailed(final Throwable disconnectFailed) throws Exception {
@@ -359,7 +311,9 @@ public class DBRule implements TestRule {
   public void destroy() throws Exception {
     this.failedManager = null;
     if (this.managers != null && !this.managers.isEmpty()) {
-      for (final DBManager manager : this.managers) {
+      final int size = this.managers.size();
+      for (int i = size - 1; i >= 0; i--) {
+        final DBManager manager = this.managers.get(i);
         if (manager != null) {
           try {
             manager.destroy();
@@ -534,13 +488,17 @@ public class DBRule implements TestRule {
 
   public static interface DBManager {
 
-    public void create(final ConnectionDescriptor cd) throws Exception;
+    public void setDescription(final Description description);
+
+    public void setTestInstance(final Object testInstance);
+
+    public void create() throws Exception;
 
     public void createFailed(final Throwable createFailed) throws Exception;
 
     public void connect() throws Exception;
 
-    public void inject(final Object testInstance, final Description description) throws Exception;
+    public void inject() throws Exception;
 
     public void connectFailed(final Throwable connectFailed) throws Exception;
 
@@ -567,13 +525,35 @@ public class DBRule implements TestRule {
   }
 
   public static class AbstractDBManager implements DBManager {
-    
+
+    private Description description;
+
+    private Object testInstance;
+
     public AbstractDBManager() {
       super();
     }
 
+    public Description getDescription() {
+      return this.description;
+    }
+
     @Override
-    public void create(final ConnectionDescriptor cd) throws Exception {
+    public void setDescription(final Description description) {
+      this.description = description;
+    }
+
+    public Object getTestInstance() {
+      return this.testInstance;
+    }
+
+    @Override
+    public void setTestInstance(final Object testInstance) {
+      this.testInstance = testInstance;
+    }
+
+    @Override
+    public void create() throws Exception {
 
     }
 
@@ -588,7 +568,7 @@ public class DBRule implements TestRule {
     }
 
     @Override
-    public void inject(final Object testInstance, final Description description) {
+    public void inject() {
 
     }
 
@@ -645,6 +625,61 @@ public class DBRule implements TestRule {
     @Override
     public void destroyFailed(final Throwable destroyFailed) throws Exception {
 
+    }
+
+    public static final boolean isClosed(final Connection connection) {
+      boolean closed = false;
+      if (connection == null) {
+        closed = true;
+      } else {
+        try {
+          closed = connection.isClosed();
+        } catch (final SQLException boom) {
+          closed = true;
+        }
+      }
+      return closed;
+    }
+
+  }
+
+  public static class SingleDBManager extends AbstractDBManager {
+
+    private final ConnectionDescriptor cd;
+
+    private Connection connection;
+
+    public SingleDBManager(final ConnectionDescriptor cd) {
+      super();
+      if (cd == null) {
+        throw new IllegalArgumentException("cd", new NullPointerException("cd"));
+      }
+      this.cd = cd;
+    }
+
+    public ConnectionDescriptor getConnectionDescriptor() {
+      return this.cd;
+    }
+
+    public Connection getAllocatedConnection() {
+      return this.connection;
+    }
+
+    @Override
+    public void connect() throws Exception {
+      Connection c = this.getAllocatedConnection();
+      if (isClosed(c) && this.cd != null) {
+        c = this.cd.getConnection();
+      }
+      this.connection = c;
+    }
+
+    @Override
+    public void disconnect() throws Exception {
+      Connection c = this.getAllocatedConnection();
+      if (!isClosed(c)) {
+        c.close();
+      }
     }
 
   }

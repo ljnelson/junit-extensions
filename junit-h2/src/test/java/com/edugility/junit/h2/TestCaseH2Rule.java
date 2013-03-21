@@ -31,6 +31,8 @@ import java.lang.reflect.Proxy;
 
 import java.sql.Connection;
 
+import com.edugility.junit.db.DBRule;
+
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -39,12 +41,14 @@ import static org.junit.Assert.assertTrue;
 
 public class TestCaseH2Rule {
 
+  public final H2Manager manager = new H2Manager("test", "test", "sa", "", true);
+
   @Rule
-  public final H2Rule rule = new H2Rule("test", "test", "sa", "", true);
+  public final DBRule rule = new DBRule(this.manager);
 
   @Test
   public void testGetConnectionReturnsNonNullConnection() throws Exception {
-    final Connection connection = this.rule.getAllocatedConnection();
+    final Connection connection = this.manager.getAllocatedConnection();
     assertNotNull(connection);
   }
 

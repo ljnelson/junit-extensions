@@ -37,7 +37,7 @@ public class DataSourceDBRule extends DBRule {
   private final DataSource dataSource;
 
   public DataSourceDBRule(final ConnectionDescriptor cd) {
-    super(cd);
+    super();
     if (cd == null) {
       throw new IllegalArgumentException("cd", new NullPointerException("cd == null"));
     }

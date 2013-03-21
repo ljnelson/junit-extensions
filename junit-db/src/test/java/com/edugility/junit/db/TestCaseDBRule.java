@@ -48,7 +48,7 @@ public class TestCaseDBRule {
 
   public TestCaseDBRule() throws Exception {
     super();
-    this.rule = new DBRule(new ConnectionDescriptor("jdbc:h2:mem:test", "test", null, "sa", ""));
+    this.rule = new DBRule();
   }
 
   @Before

@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright (c) 2011-2011 Edugility LLC.
+ * Copyright (c) 2013 Edugility LLC.
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -9,10 +9,10 @@
  * modify, merge, publish, distribute, sublicense and/or sell copies
  * of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be
  * included in all copies or substantial portions of the Software.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -32,9 +32,7 @@ import java.sql.Connection;
 import java.util.Properties;
 
 import com.edugility.junit.db.ConnectionDescriptor;
-import com.edugility.junit.db.DBRule;
-
-import com.edugility.throwables.ThrowableChain;
+import com.edugility.junit.db.DBRule.AbstractDBManager;
 
 import org.dbunit.AbstractDatabaseTester;
 import org.dbunit.IDatabaseTester;
@@ -50,25 +48,21 @@ import org.dbunit.dataset.IDataSet;
 
 import org.dbunit.operation.DatabaseOperation;
 
-import org.junit.rules.TestRule;
-
 import org.junit.runner.Description;
 
-import org.junit.runners.model.Statement;
+public class DbUnitManager extends AbstractDBManager implements IDatabaseTester {
 
-public class DatabaseTesterRule extends DBRule implements IDatabaseTester {
-
-  public final IDatabaseTester delegate;
+public final IDatabaseTester delegate;
 
   private transient boolean dataSetWasNull;
 
   private DataSetLocator locator;
 
-  public DatabaseTesterRule() throws Exception {
+  public DbUnitManager() throws Exception {
     this(new PropertiesBasedJdbcDatabaseTester());
   }
 
-  public DatabaseTesterRule(final String lookupNameOrConnectionUrl) throws Exception {
+  public DbUnitManager(final String lookupNameOrConnectionUrl) throws Exception {
     super();
     if (lookupNameOrConnectionUrl == null) {
       throw new IllegalArgumentException("lookupNameOrConnectionUrl", new NullPointerException("lookupNameOrConnectionUrl"));
@@ -79,23 +73,23 @@ public class DatabaseTesterRule extends DBRule implements IDatabaseTester {
     }    
   }
 
-  public DatabaseTesterRule(final Properties environment, final String lookupName) {
+  public DbUnitManager(final Properties environment, final String lookupName) {
     this(new JndiDatabaseTester(environment, lookupName));
   }
 
-  public DatabaseTesterRule(final Properties environment, final String lookupName, final String schema) {
+  public DbUnitManager(final Properties environment, final String lookupName, final String schema) {
     this(new JndiDatabaseTester(environment, lookupName, schema));
   }
 
-  public DatabaseTesterRule(final String connectionUrl, final String username, final String password) throws Exception {
+  public DbUnitManager(final String connectionUrl, final String username, final String password) throws Exception {
     this(new JdbcDatabaseTester("java.lang.Object", connectionUrl, username, password));
   }
 
-  public DatabaseTesterRule(final String connectionUrl, final String username, final String password, final String schema) throws Exception {
+  public DbUnitManager(final String connectionUrl, final String username, final String password, final String schema) throws Exception {
     this(new JdbcDatabaseTester("java.lang.Object", connectionUrl, username, password, schema));
   }
 
-  public DatabaseTesterRule(final ConnectionDescriptor cd) throws Exception {
+  public DbUnitManager(final ConnectionDescriptor cd) throws Exception {
     super();
     if (cd == null) {
       this.delegate = new PropertiesBasedJdbcDatabaseTester();
@@ -113,7 +107,7 @@ public class DatabaseTesterRule extends DBRule implements IDatabaseTester {
     }
   }
 
-  public DatabaseTesterRule(final IDatabaseTester delegate) {
+  public DbUnitManager(final IDatabaseTester delegate) {
     super();
     if (delegate == null) {
       throw new IllegalArgumentException("delegate", new NullPointerException("delegate"));
@@ -175,20 +169,7 @@ public class DatabaseTesterRule extends DBRule implements IDatabaseTester {
   }
 
   @Override
-  public void connect() throws Exception {
-    final Connection returnValue;
-    final IDatabaseConnection c = this.getConnection();
-    if (c == null) {
-      returnValue = null;
-    } else {
-      returnValue = c.getConnection();
-    }
-    
-  }
-  
-  @Override
   public void initialize() throws Exception {
-    super.initialize();
     this.dataSetWasNull = this.getDataSet() == null;
     if (this.dataSetWasNull) {
       this.setDataSet(this.findDataSet());
@@ -207,7 +188,6 @@ public class DatabaseTesterRule extends DBRule implements IDatabaseTester {
     if (this.dataSetWasNull) {
       this.setDataSet(null);
     }
-    super.reset();
   }
 
   @Override
