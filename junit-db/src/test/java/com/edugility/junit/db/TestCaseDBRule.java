@@ -35,8 +35,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 
 public class TestCaseDBRule {
 
@@ -55,7 +53,7 @@ public class TestCaseDBRule {
   public void before() {
     System.out.println("Connection in before(): " + this.c);
   }
-  
+
   @Test(expected = IllegalStateException.class)
   public void test() throws SQLException {
     System.out.println("Connection in test: " + this.c);

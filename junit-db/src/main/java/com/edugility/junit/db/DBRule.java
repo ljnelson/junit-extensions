@@ -163,33 +163,6 @@ public class DBRule implements TestRule {
       }
     }
 
-    /*
-    if (this.testInstance != null) {
-      final TestClass testClass = this.getTestClass();
-      assertNotNull(testClass);
-
-      final List<FrameworkField> annotatedFields = testClass.getAnnotatedFields(DBConnection.class);
-      assertNotNull(annotatedFields);
-
-      if (!annotatedFields.isEmpty()) {
-        for (final FrameworkField ff : annotatedFields) {
-          if (ff != null) {
-            final Field f = ff.getField();
-            if (f != null && Connection.class.isAssignableFrom(f.getType())) {
-              final boolean accessible = f.isAccessible();
-              f.setAccessible(true);
-              try {
-                f.set(this.testInstance, connection);
-              } finally {
-                f.setAccessible(accessible);
-              }
-            }
-          }
-        }
-      }
-    }
-    */
-
   }
 
   public void connectFailed(final Throwable connectFailed) throws Exception {
@@ -568,7 +541,7 @@ public class DBRule implements TestRule {
     }
 
     @Override
-    public void inject() {
+    public void inject() throws Exception {
 
     }
 
@@ -675,7 +648,124 @@ public class DBRule implements TestRule {
     }
 
     @Override
+    public void inject() throws Exception {
+      final Object testInstance = this.getTestInstance();
+      if (testInstance != null) {
+        final TestClass testClass = DBRule.getTestClass(this.getDescription());
+        assertNotNull(testClass);
+        
+        final List<FrameworkField> annotatedFields = testClass.getAnnotatedFields(DBConnection.class);
+        assertNotNull(annotatedFields);
+        
+        if (!annotatedFields.isEmpty()) {
+          final ConnectionDescriptor cd = this.getConnectionDescriptor();
+          if (cd != null) {
+            final Connection connection = this.getAllocatedConnection();
+            final String cdCatalog = cd.getCatalog();
+            final String cdSchema = cd.getSchema();
+            final String cdUrl = cd.getConnectionURL();
+            for (final FrameworkField ff : annotatedFields) {
+              if (ff != null) {
+                final Field f = ff.getField();
+                if (f != null && Connection.class.isAssignableFrom(f.getType())) {
+                  final DBConnection dbConnection = f.getAnnotation(DBConnection.class);
+                  assertNotNull(dbConnection);
+                  final String catalog = dbConnection.catalog();
+                  final String schema = dbConnection.schema();
+                  final String url = dbConnection.url();
+
+                  boolean inject = false;
+                  if (url == null || url.isEmpty()) {
+                    if (catalog == null || catalog.isEmpty()) {
+                      if (schema == null || schema.isEmpty() || schema.equals(cdSchema)) {
+                        // Just this schema, please
+                        inject = true;
+                      }
+                    } else if (catalog.equals(cdCatalog)) {
+                      if (schema == null || schema.isEmpty() || schema.equals(cdSchema)) {
+                        inject = true;
+                      }
+                    }
+                  } else if (url.equals(cdUrl)) {
+                    inject = true;
+                  }
+
+                  if (inject) {
+                    final boolean accessible = f.isAccessible();
+                    f.setAccessible(true);
+                    try {
+                      f.set(testInstance, connection);
+                    } finally {
+                      f.setAccessible(accessible);
+                    }
+                  }
+
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    @Override
     public void disconnect() throws Exception {
+      final Object testInstance = this.getTestInstance();
+      if (testInstance != null) {
+        final TestClass testClass = DBRule.getTestClass(this.getDescription());
+        assertNotNull(testClass);
+        
+        final List<FrameworkField> annotatedFields = testClass.getAnnotatedFields(DBConnection.class);
+        assertNotNull(annotatedFields);
+        
+        if (!annotatedFields.isEmpty()) {
+          final ConnectionDescriptor cd = this.getConnectionDescriptor();
+          if (cd != null) {
+            final String cdCatalog = cd.getCatalog();
+            final String cdSchema = cd.getSchema();
+            final String cdUrl = cd.getConnectionURL();
+            for (final FrameworkField ff : annotatedFields) {
+              if (ff != null) {
+                final Field f = ff.getField();
+                if (f != null && Connection.class.isAssignableFrom(f.getType())) {
+                  final DBConnection dbConnection = f.getAnnotation(DBConnection.class);
+                  assertNotNull(dbConnection);
+                  final String catalog = dbConnection.catalog();
+                  final String schema = dbConnection.schema();
+                  final String url = dbConnection.url();
+
+                  boolean inject = false;
+                  if (url == null || url.isEmpty()) {
+                    if (catalog == null || catalog.isEmpty()) {
+                      if (schema == null || schema.isEmpty() || schema.equals(cdSchema)) {
+                        // Just this schema, please
+                        inject = true;
+                      }
+                    } else if (catalog.equals(cdCatalog)) {
+                      if (schema == null || schema.isEmpty() || schema.equals(cdSchema)) {
+                        inject = true;
+                      }
+                    }
+                  } else if (url.equals(cdUrl)) {
+                    inject = true;
+                  }
+
+                  if (inject) {
+                    final boolean accessible = f.isAccessible();
+                    f.setAccessible(true);
+                    try {
+                      f.set(testInstance, null);
+                    } finally {
+                      f.setAccessible(accessible);
+                    }
+                  }
+
+                }
+              }
+            }
+          }
+        }
+      }
       Connection c = this.getAllocatedConnection();
       if (!isClosed(c)) {
         c.close();

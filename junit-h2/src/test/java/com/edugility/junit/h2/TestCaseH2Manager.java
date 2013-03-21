@@ -31,25 +31,38 @@ import java.lang.reflect.Proxy;
 
 import java.sql.Connection;
 
+import com.edugility.junit.db.DBConnection;
 import com.edugility.junit.db.DBRule;
 
 import org.junit.Rule;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-public class TestCaseH2Rule {
+public class TestCaseH2Manager {
 
   public final H2Manager manager = new H2Manager("test", "test", "sa", "", true);
 
   @Rule
   public final DBRule rule = new DBRule(this.manager);
 
+  @DBConnection(catalog = "test")
+  private Connection connection;
+
+  @DBConnection(catalog = "froo")
+  private Connection nullConnection;
+
+  @DBConnection
+  private Connection promiscuousConnection;
+
   @Test
-  public void testGetConnectionReturnsNonNullConnection() throws Exception {
-    final Connection connection = this.manager.getAllocatedConnection();
-    assertNotNull(connection);
+  public void testInjection() throws Exception {
+    assertNotNull(this.connection);
+    assertNull(this.nullConnection);
+    assertSame(this.connection, this.promiscuousConnection);
   }
 
 }
