@@ -347,10 +347,10 @@ public class DBRule implements TestRule {
 
               try {
                 connect();
-                inject();
 
                 try {
                   initialize();
+                  inject();
 
                   try {
                     base.evaluate();

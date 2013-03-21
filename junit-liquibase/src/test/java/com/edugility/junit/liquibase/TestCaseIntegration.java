@@ -38,6 +38,7 @@ import com.edugility.junit.db.DBConnection;
 import com.edugility.junit.db.DBRule;
 
 import com.edugility.junit.dbunit.DatabaseTesterRule;
+import com.edugility.junit.dbunit.DataSet;
 import com.edugility.junit.dbunit.DbUnitManager;
 
 import com.edugility.junit.h2.H2Manager;
@@ -68,8 +69,11 @@ public class TestCaseIntegration {
     }
   }
 
-  @DBConnection
+  @DBConnection(catalog = "test")
   private Connection connection;
+
+  @DataSet
+  private IDataSet dataSet;
 
   private final DbUnitManager dbUnitManager;
 
@@ -88,6 +92,7 @@ public class TestCaseIntegration {
   @Test
   public void testIntegration() throws Exception {
     assertNotNull(this.connection);
+    assertNotNull(this.dataSet);
 
     final IDataSet dataSet = this.dbUnitManager.getDataSet();
     assertNotNull(dataSet);

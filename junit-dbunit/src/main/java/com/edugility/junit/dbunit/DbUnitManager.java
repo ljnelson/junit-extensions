@@ -27,11 +27,15 @@
  */
 package com.edugility.junit.dbunit;
 
+import java.lang.reflect.Field;
+
 import java.sql.Connection;
 
+import java.util.List;
 import java.util.Properties;
 
 import com.edugility.junit.db.ConnectionDescriptor;
+import com.edugility.junit.db.DBRule;
 import com.edugility.junit.db.DBRule.AbstractDBManager;
 
 import org.dbunit.AbstractDatabaseTester;
@@ -50,20 +54,43 @@ import org.dbunit.operation.DatabaseOperation;
 
 import org.junit.runner.Description;
 
+import org.junit.runners.model.FrameworkField;
+import org.junit.runners.model.TestClass;
+
+import static org.junit.Assert.assertNotNull;
+
 public class DbUnitManager extends AbstractDBManager implements IDatabaseTester {
 
-public final IDatabaseTester delegate;
+  public final IDatabaseTester delegate;
 
   private transient boolean dataSetWasNull;
 
   private DataSetLocator locator;
 
+  private final Object id;
+
+
+  /*
+   * Constructors.
+   */
+
+
   public DbUnitManager() throws Exception {
-    this(new PropertiesBasedJdbcDatabaseTester());
+    this(null, new PropertiesBasedJdbcDatabaseTester());
   }
 
+  public DbUnitManager(final Object id) throws Exception {
+    this(id, new PropertiesBasedJdbcDatabaseTester());
+  }
+
+
   public DbUnitManager(final String lookupNameOrConnectionUrl) throws Exception {
+    this(null, lookupNameOrConnectionUrl);
+  }
+
+  public DbUnitManager(final Object id, final String lookupNameOrConnectionUrl) throws Exception {
     super();
+    this.id = id;
     if (lookupNameOrConnectionUrl == null) {
       throw new IllegalArgumentException("lookupNameOrConnectionUrl", new NullPointerException("lookupNameOrConnectionUrl"));
     } else if (lookupNameOrConnectionUrl.startsWith("jdbc:")) {
@@ -74,23 +101,44 @@ public final IDatabaseTester delegate;
   }
 
   public DbUnitManager(final Properties environment, final String lookupName) {
-    this(new JndiDatabaseTester(environment, lookupName));
+    this(null, environment, lookupName);
+  }
+
+  public DbUnitManager(final Object id, final Properties environment, final String lookupName) {
+    this(id, new JndiDatabaseTester(environment, lookupName));
   }
 
   public DbUnitManager(final Properties environment, final String lookupName, final String schema) {
-    this(new JndiDatabaseTester(environment, lookupName, schema));
+    this(null, new JndiDatabaseTester(environment, lookupName, schema));
+  }
+
+  public DbUnitManager(final Object id, final Properties environment, final String lookupName, final String schema) {
+    this(id, new JndiDatabaseTester(environment, lookupName, schema));
   }
 
   public DbUnitManager(final String connectionUrl, final String username, final String password) throws Exception {
-    this(new JdbcDatabaseTester("java.lang.Object", connectionUrl, username, password));
+    this(null, new JdbcDatabaseTester("java.lang.Object", connectionUrl, username, password));
+  }
+
+  public DbUnitManager(final Object id, final String connectionUrl, final String username, final String password) throws Exception {
+    this(id, new JdbcDatabaseTester("java.lang.Object", connectionUrl, username, password));
   }
 
   public DbUnitManager(final String connectionUrl, final String username, final String password, final String schema) throws Exception {
-    this(new JdbcDatabaseTester("java.lang.Object", connectionUrl, username, password, schema));
+    this(null, new JdbcDatabaseTester("java.lang.Object", connectionUrl, username, password, schema));
+  }
+
+  public DbUnitManager(final Object id, final String connectionUrl, final String username, final String password, final String schema) throws Exception {
+    this(id, new JdbcDatabaseTester("java.lang.Object", connectionUrl, username, password, schema));
   }
 
   public DbUnitManager(final ConnectionDescriptor cd) throws Exception {
+    this(null, cd);
+  }
+
+  public DbUnitManager(final Object id, final ConnectionDescriptor cd) throws Exception {
     super();
+    this.id = id;
     if (cd == null) {
       this.delegate = new PropertiesBasedJdbcDatabaseTester();
     } else {
@@ -108,11 +156,25 @@ public final IDatabaseTester delegate;
   }
 
   public DbUnitManager(final IDatabaseTester delegate) {
+    this(null, delegate);
+  }
+
+  public DbUnitManager(final Object id, final IDatabaseTester delegate) {
     super();
+    this.id = id;
     if (delegate == null) {
       throw new IllegalArgumentException("delegate", new NullPointerException("delegate"));
     }
     this.delegate = delegate;
+  }
+
+
+  /*
+   * Instance methods.
+   */
+
+  public Object getId() {
+    return this.id;
   }
 
   public DataSetLocator getDataSetLocator() {
@@ -131,6 +193,12 @@ public final IDatabaseTester delegate;
     return locator.findDataSet(this.getDescription());
   }
 
+
+  /*
+   * IDatabaseTester implementation.
+   */
+
+
   @Deprecated
   @Override
   public final void closeConnection(final IDatabaseConnection connection) throws Exception {
@@ -138,12 +206,12 @@ public final IDatabaseTester delegate;
   }
 
   @Override
-  public IDatabaseConnection getConnection() throws Exception {
+  public final IDatabaseConnection getConnection() throws Exception {
     return this.delegate.getConnection();
   }
 
   @Override
-  public IDataSet getDataSet() {
+  public final IDataSet getDataSet() {
     return this.delegate.getDataSet();
   }
 
@@ -169,25 +237,8 @@ public final IDatabaseTester delegate;
   }
 
   @Override
-  public void initialize() throws Exception {
-    this.dataSetWasNull = this.getDataSet() == null;
-    if (this.dataSetWasNull) {
-      this.setDataSet(this.findDataSet());
-    }
-    this.onSetup();
-  }
-
-  @Override
   public final void onSetup() throws Exception {
     this.delegate.onSetup();
-  }
-
-  @Override
-  public void reset() throws Exception {
-    this.onTearDown();
-    if (this.dataSetWasNull) {
-      this.setDataSet(null);
-    }
   }
 
   @Override
@@ -198,6 +249,85 @@ public final IDatabaseTester delegate;
   @Override
   public final void setOperationListener(final IOperationListener listener) {
     this.delegate.setOperationListener(listener);
+  }
+
+
+  /*
+   * AbstractDBManager overrides.
+   */
+
+
+  @Override
+  public void initialize() throws Exception {
+    this.dataSetWasNull = this.getDataSet() == null;
+    if (this.dataSetWasNull) {
+      this.setDataSet(this.findDataSet());
+    }
+    this.onSetup();
+  }
+
+  @Override
+  public void inject() throws Exception {
+    this.inject(this.getDataSet());
+  }
+
+  @Override
+  public void disconnect() throws Exception {
+    this.inject(null);
+  }
+
+  private final void inject(final IDataSet dataSet) throws Exception {
+    final Object testInstance = this.getTestInstance();
+    if (testInstance != null) {
+      final Description description = this.getDescription();
+      final TestClass testClass = DBRule.getTestClass(description);
+      assertNotNull(testClass);
+        
+      final List<FrameworkField> annotatedFields = testClass.getAnnotatedFields(DataSet.class);
+      assertNotNull(annotatedFields);
+        
+      if (!annotatedFields.isEmpty()) {
+        for (final FrameworkField ff : annotatedFields) {
+          if (ff != null) {
+            final Field f = ff.getField();
+            if (f != null && IDataSet.class.isAssignableFrom(f.getType())) {
+              final DataSet dataSetAnnotation = f.getAnnotation(DataSet.class);
+              assertNotNull(dataSetAnnotation);
+
+              boolean inject = false;
+              final Object id = this.getId();
+              final String value = dataSetAnnotation.value();
+              if (id == null) {
+                if (value == null || value.isEmpty()) {
+                  inject = true;
+                }
+              } else if (id.equals(value)) {
+                inject = true;
+              }
+
+              if (inject) {
+                final boolean accessible = f.isAccessible();
+                f.setAccessible(true);
+                try {
+                  f.set(testInstance, dataSet);
+                } finally {
+                  f.setAccessible(accessible);
+                }
+                
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  @Override
+  public void reset() throws Exception {
+    this.onTearDown();
+    if (this.dataSetWasNull) {
+      this.setDataSet(null);
+    }
   }
 
 }
