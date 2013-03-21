@@ -29,9 +29,18 @@
  */
 package com.edugility.junit.liquibase;
 
+import java.sql.Connection;
+
+import java.util.Arrays;
+
 import com.edugility.junit.db.ConnectionDescriptor;
+import com.edugility.junit.db.DBConnection;
+import com.edugility.junit.db.DBRule;
 
 import com.edugility.junit.dbunit.DatabaseTesterRule;
+import com.edugility.junit.dbunit.DbUnitManager;
+
+import com.edugility.junit.h2.H2Manager;
 
 import org.dbunit.IDatabaseTester;
 
@@ -59,21 +68,28 @@ public class TestCaseIntegration {
     }
   }
 
-  @Rule
-  public final TestRule rule;
+  @DBConnection
+  private Connection connection;
 
-  public final DatabaseTesterRule tester;
+  private final DbUnitManager dbUnitManager;
+
+  @Rule
+  public final DBRule rule;
 
   public TestCaseIntegration() throws Exception {
     super();
     final ConnectionDescriptor cd = new ConnectionDescriptor("jdbc:h2:mem:test;INIT=CREATE SCHEMA IF NOT EXISTS test;DB_CLOSE_DELAY=-1", "test", "test", "sa", "");
-    this.tester = new DatabaseTesterRule(cd);
-    this.rule = RuleChain.outerRule(new DataSourceLiquibaseRule(cd)).around(this.tester);
+    final H2Manager h2Manager = new H2Manager(cd);
+    dbUnitManager = new DbUnitManager(cd);
+    final LiquibaseManager liquibaseManager = new LiquibaseManager(cd);
+    this.rule = new DBRule(Arrays.asList(h2Manager, liquibaseManager, dbUnitManager));
   }
 
   @Test
   public void testIntegration() throws Exception {
-    final IDataSet dataSet = this.tester.getDataSet();
+    assertNotNull(this.connection);
+
+    final IDataSet dataSet = this.dbUnitManager.getDataSet();
     assertNotNull(dataSet);
     final ITable rockTable = dataSet.getTable("rock");
     assertNotNull(rockTable);

@@ -44,7 +44,7 @@ import static org.junit.Assert.assertTrue;
 
 public class TestCaseH2Manager {
 
-  public final H2Manager manager = new H2Manager("test", "test", "sa", "", true);
+  public final H2Manager manager = new H2Manager("jdbc:h2:mem:test");
 
   @Rule
   public final DBRule rule = new DBRule(this.manager);

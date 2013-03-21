@@ -30,10 +30,15 @@ package com.edugility.junit.liquibase;
 import java.io.InputStream;
 import java.io.IOException;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import java.sql.Connection;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Iterator;
 
 import java.util.logging.Level;
@@ -53,6 +58,9 @@ import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.DatabaseException;
 import liquibase.exception.LiquibaseException;
 
+import liquibase.resource.ClassLoaderResourceAccessor;
+import liquibase.resource.CompositeResourceAccessor;
+import liquibase.resource.FileSystemResourceAccessor;
 import liquibase.resource.ResourceAccessor;
 
 import static org.junit.Assert.assertNotNull;
@@ -67,6 +75,10 @@ public class LiquibaseManager extends SingleDBManager {
   private final String changeLogContext;
 
   private transient Database database;
+
+  public LiquibaseManager(final ConnectionDescriptor cd, final String... changeLogContexts) {
+    this(cd, null, changeLogContexts);
+  }
 
   public LiquibaseManager(final ConnectionDescriptor cd, final ResourceAccessor accessor, final String... changeLogContexts) {
     this(cd, "changelog.xml", accessor, changeLogContexts);
@@ -98,10 +110,15 @@ public class LiquibaseManager extends SingleDBManager {
   @Override
   public void initialize() throws Exception {
     assertNotNull(this.changeLogResourceName);
-    assertNotNull(this.accessor);
     assertNotNull(this.database);
-    assertTrue(changeLogExists(this.changeLogResourceName, this.accessor));
-    final Liquibase liquibase = new Liquibase(this.changeLogResourceName, this.accessor, this.database);
+    final ResourceAccessor accessor;
+    if (this.accessor == null) {
+      accessor = new CompositeResourceAccessor(new FileSystemResourceAccessor(), new ClassLoaderResourceAccessor(), new URLResourceAccessor());
+    } else {
+      accessor = this.accessor;
+    }
+    assertTrue(changeLogExists(this.changeLogResourceName, accessor));
+    final Liquibase liquibase = new Liquibase(this.changeLogResourceName, accessor, this.database);
     try {
       liquibase.update(this.changeLogContext);
     } finally {
@@ -207,6 +224,37 @@ public class LiquibaseManager extends SingleDBManager {
       logger.exiting(this.getClass().getName(), "changeLogExists", Boolean.valueOf(returnValue));
     }
     return returnValue;
+  }
+
+  public static class URLResourceAccessor implements ResourceAccessor {
+    
+    public URLResourceAccessor() {
+      super();
+    }
+    
+    @Override
+    public InputStream getResourceAsStream(final String resourceName) throws IOException {
+      try {
+        return new URL(resourceName).openStream();
+      } catch (final MalformedURLException ignore) {
+        return null;
+      }
+    }
+    
+    @Override
+    public Enumeration<URL> getResources(final String packageName) throws IOException {
+      final ClassLoader classLoader = this.toClassLoader();
+      if (classLoader != null) {
+        return classLoader.getResources(packageName);
+      }
+      return Collections.enumeration(Collections.<URL>emptySet());
+    }
+    
+    @Override
+    public ClassLoader toClassLoader() {
+      return Thread.currentThread().getContextClassLoader();
+    }
+    
   }
 
 }
